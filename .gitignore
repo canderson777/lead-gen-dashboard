@@ -1,0 +1,20 @@
+# Local backups & exports (may contain your API keys)
+*-backup.json
+*.local.json
+export*.json
+prospects*.csv
+leads*.csv
+
+# Editor / OS junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Env / secrets — never commit keys
+.env
+.env.*
+secrets*
+*.key

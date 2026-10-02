@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Generation Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --surface2:#f8fafc; --border:#e3e8f0;
+  --text:#1a2233; --text2:#5b6b84; --text3:#8b98ad;
+  --primary:#4f46e5; --primary-soft:#eef0fe; --green:#10b981; --green-soft:#e7f8f2;
+  --red:#ef4444; --red-soft:#fdecec; --amber:#f59e0b; --amber-soft:#fef3e0;
+  --blue:#3b82f6; --purple:#8b5cf6; --pink:#ec4899; --teal:#14b8a6; --orange:#f97316;
+  --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  --shadow-lg:0 12px 32px rgba(16,24,40,.14);
+  --radius:14px;
+}
+[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --surface2:#1e2740; --border:#2a3552;
+  --text:#e8edf6; --text2:#9aa8c2; --text3:#6b7a97;
+  --primary:#6366f1; --primary-soft:#252b52;
+  --green-soft:#12302a; --red-soft:#3a1d20; --amber-soft:#33270f;
+  --shadow:0 1px 3px rgba(0,0,0,.35); --shadow-lg:0 12px 32px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;transition:background .25s}
+.wrap{max-width:1440px;margin:0 auto;padding:20px 24px 60px}
+
+/* ===== Header ===== */
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px}
+.brand h1{font-size:20px;font-weight:700}
+.brand p{font-size:12px;color:var(--text2)}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{filter:brightness(1.1);color:#fff}
+.btn.danger{color:var(--red)}
+.btn.danger:hover{border-color:var(--red)}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.icon-btn{width:38px;height:38px;justify-content:center;padding:0}
+
+/* ===== Filter bar ===== */
+.filterbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:18px}
+.filterbar label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);display:block;margin-bottom:4px}
+.filter-group{min-width:160px}
+select,input[type="text"],input[type="number"],input[type="date"],input[type="email"],textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border .15s}
+select:focus,input:focus,textarea:focus{border-color:var(--primary)}
+.filter-spacer{flex:1}
+.demo-badge{background:var(--amber-soft);color:var(--amber);font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px;display:none;align-items:center;gap:8px}
+.demo-badge button{background:none;border:none;color:var(--amber);font-weight:800;cursor:pointer;text-decoration:underline;font-size:12px}
+
+/* ===== KPI cards ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .k-label{font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px}
+.kpi .k-dot{width:8px;height:8px;border-radius:50%}
+.kpi .k-value{font-size:26px;font-weight:800;margin:6px 0 4px;letter-spacing:-.5px}
+.kpi .k-delta{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px}
+.kpi .k-delta.up{color:var(--green);background:var(--green-soft)}
+.kpi .k-delta.down{color:var(--red);background:var(--red-soft)}
+.kpi .k-delta.flat{color:var(--text3);background:var(--surface2)}
+.kpi .k-sub{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* ===== Grid & cards ===== */
+.grid{display:grid;gap:14px;margin-bottom:18px}
+.grid.cols-3-2{grid-template-columns:3fr 2fr}
+.grid.cols-1-1-1{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:1000px){.grid.cols-3-2,.grid.cols-1-1-1{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.card h3{font-size:14px;font-weight:700;margin-bottom:2px}
+.card .sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.chart-box{position:relative;height:260px}
+.chart-box.tall{height:300px}
+
+/* ===== Funnel ===== */
+.funnel{display:flex;flex-direction:column;gap:10px;padding-top:6px}
+.f-row{display:grid;grid-template-columns:92px 1fr 110px;align-items:center;gap:10px}
+.f-label{font-size:12px;font-weight:600;color:var(--text2);text-align:right}
+.f-track{background:var(--surface2);border-radius:8px;height:30px;overflow:hidden}
+.f-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;color:#fff;font-size:12px;font-weight:700;min-width:34px;transition:width .5s ease}
+.f-conv{font-size:11px;color:var(--text3);font-weight:600}
+
+/* ===== Tables ===== */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);font-weight:700;text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+th .arrow{font-size:9px;margin-left:3px}
+td{padding:11px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tbody tr:hover{background:var(--surface2)}
+tbody tr:last-child td{border-bottom:none}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+th.num{text-align:right}
+.pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;display:inline-block;white-space:nowrap}
+.proj-tag{display:inline-flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap}
+.proj-tag .k-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.table-scroll{overflow-x:auto}
+.table-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--text3)}
+.empty{padding:34px;text-align:center;color:var(--text3);font-size:13px}
+.row-actions{display:flex;gap:4px;justify-content:flex-end}
+.row-actions button{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:3px 5px;border-radius:6px}
+.row-actions button:hover{color:var(--primary);background:var(--primary-soft)}
+select.status-sel{width:auto;padding:4px 8px;font-size:12px;font-weight:600;border-radius:8px}
+
+/* ===== Modals ===== */
+.overlay{position:fixed;inset:0;background:rgba(10,15,30,.55);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:40px 16px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;box-shadow:var(--shadow-lg);width:100%;max-width:520px;padding:24px}
+.modal h2{font-size:17px;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.form-field label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.proj-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:300px;overflow-y:auto}
+.proj-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.proj-row .name{flex:1;font-weight:600}
+.proj-row .meta{font-size:11px;color:var(--text3)}
+.color-swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatch{width:26px;height:26px;border-radius:8px;cursor:pointer;border:2px solid transparent}
+.swatch.sel{border-color:var(--text);transform:scale(1.1)}
+.hint{font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5}
+.file-drop{border:2px dashed var(--border);border-radius:12px;padding:26px;text-align:center;color:var(--text2);cursor:pointer;transition:all .15s}
+.file-drop:hover{border-color:var(--primary);color:var(--primary)}
+.seg{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;margin-bottom:14px}
+.seg button{flex:1;border:none;background:none;padding:7px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--text);color:var(--bg);padding:11px 22px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);transition:transform .3s;z-index:200}
+.toast.show{transform:translateX(-50%) translateY(0)}
+footer{text-align:center;color:var(--text3);font-size:12px;margin-top:8px}
+
+/* ===== Tabs ===== */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:5px;margin-bottom:18px;box-shadow:var(--shadow);overflow-x:auto}
+.tabs button{border:none;background:none;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.tabs button.on{background:var(--primary);color:#fff}
+.tabs button .cnt{background:var(--primary-soft);color:var(--primary);font-size:11px;padding:1px 7px;border-radius:10px}
+.tabs button.on .cnt{background:rgba(255,255,255,.25);color:#fff}
+.tab-page{display:none}
+.tab-page.on{display:block;animation:fadein .2s}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+/* ===== Prospecting ===== */
+.search-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.search-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.search-row .grow{flex:1;min-width:240px}
+.criteria{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);align-items:flex-end}
+.criteria .form-field{min-width:120px}
+.chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px;display:inline-flex;align-items:center;gap:4px}
+.chip.pass{background:var(--green-soft);color:var(--green)}
+.chip.fail{background:var(--red-soft);color:var(--red)}
+.chip.warn{background:var(--amber-soft);color:var(--amber)}
+.chip.info{background:var(--primary-soft);color:var(--primary)}
+.p-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.p-card .p-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.p-card h4{font-size:15px}
+.p-card .p-meta{font-size:12px;color:var(--text2);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+.p-card .p-gap{margin-top:10px;font-size:13px;background:var(--surface2);border-left:3px solid var(--amber);padding:8px 12px;border-radius:0 8px 8px 0}
+.p-card .p-angle{margin-top:6px;font-size:13px;background:var(--surface2);border-left:3px solid var(--primary);padding:8px 12px;border-radius:0 8px 8px 0;font-style:italic}
+.p-actions{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.score-badge{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#fff;flex:none}
+.fav-btn{background:none;border:none;font-size:19px;cursor:pointer;padding:2px}
+.saved-searches{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.saved-chip{background:var(--primary-soft);color:var(--primary);border:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:16px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.saved-chip .x{opacity:.6}
+.results-note{font-size:12px;color:var(--text3);margin:10px 0}
+
+/* ===== Kanban ===== */
+.kanban{display:grid;grid-template-columns:repeat(7,minmax(180px,1fr));gap:10px;overflow-x:auto;align-items:start}
+@media(max-width:1200px){.kanban{display:flex;overflow-x:auto}.kb-col{min-width:200px}}
+.kb-col{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px}
+.kb-col h5{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between}
+.kb-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;box-shadow:var(--shadow)}
+.kb-card b{font-size:12px;display:block;margin-bottom:3px}
+.kb-card .m{font-size:11px;color:var(--text3)}
+.kb-move{display:flex;gap:4px;margin-top:6px}
+.kb-move button{flex:1;border:1px solid var(--border);background:var(--surface2);border-radius:6px;font-size:11px;cursor:pointer;padding:2px;color:var(--text2)}
+.kb-move button:hover{color:var(--primary);border-color:var(--primary)}
+
+/* ===== Outreach modal ===== */
+.channel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.channel-grid button{border:1px solid var(--border);background:var(--surface2);border-radius:10px;padding:10px 6px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);display:flex;flex-direction:column;gap:4px;align-items:center}
+.channel-grid button.on{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.channel-grid button span{font-size:18px}
+.draft-box{width:100%;min-height:180px;font-size:13px;line-height:1.55}
+.gen-row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.ai-note{font-size:11px;color:var(--text3);margin-top:6px}
+
+/* ===== Logs ===== */
+.log-type{font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;background:var(--primary-soft);color:var(--primary);white-space:nowrap}
+
+/* ===== Settings ===== */
+.cred-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.cred-grid{grid-template-columns:1fr}}
+.cred-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.cred-card h3{font-size:14px;margin-bottom:4px}
+.cred-card .form-field{margin-bottom:10px}
+.key-input{display:flex;gap:6px}
+.key-input input{flex:1}
+.warn-box{background:var(--amber-soft);border:1px solid var(--amber);border-radius:12px;padding:12px 16px;font-size:12.5px;line-height:1.6;margin-bottom:16px}
+.score-calc{display:flex;flex-direction:column;gap:10px;margin:10px 0}
+.score-calc .sc-row{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;font-size:12.5px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.detail-grid .full{grid-column:1/-1}
+.modal.wide{max-width:760px}
+
+/* ===== Content Studio ===== */
+.skill-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)}
+.skill-card{border:1px solid var(--border);background:var(--surface2);border-radius:12px;padding:12px 10px;cursor:pointer;text-align:center;transition:all .15s}
+.skill-card:hover{border-color:var(--primary);background:var(--primary-soft)}
+.skill-card .ic{font-size:20px}
+.skill-card b{display:block;font-size:12.5px;margin-top:5px}
+.skill-card .d{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.35}
+.jr-entry{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface2)}
+.jr-entry .jr-date{font-size:11px;color:var(--text3);font-weight:700}
+.jr-entry .jr-txt{font-size:12.5px;color:var(--text2);margin:4px 0 8px;white-space:pre-wrap;max-height:66px;overflow:hidden}
+.lib-item{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:var(--surface)}
+.lib-item:hover{border-color:var(--primary)}
+.lib-item .li-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lib-item .li-body{font-size:12px;color:var(--text3);margin-top:4px;max-height:48px;overflow:hidden;white-space:pre-wrap}
+.day-chip{background:var(--amber-soft);color:var(--amber);font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.asset-card{border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:10px;background:var(--surface2)}
+.asset-card pre{white-space:pre-wrap;font-family:inherit;font-size:12.5px;line-height:1.5;max-height:220px;overflow:auto;margin:8px 0}
+#csRowDays,#csRowPlatforms,#csRowKind,#csRowLen,#csRowLink,#csRowOuttype{display:none}
+.pf-checks{display:flex;gap:16px;flex-wrap:wrap;padding:7px 0;font-size:13px;font-weight:600}
+.pf-checks label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.pf-checks input{width:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="logo">LG</div>
+      <div>
+        <h1>Lead Generation Dashboard</h1>
+        <p>All projects &middot; multi-channel lead &amp; campaign performance</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="demo-badge" id="demoBadge">⚡ Demo data <button onclick="clearDemo()">clear &amp; start fresh</button></span>
+      <button class="btn" onclick="openImport()">⬆ Import CSV</button>
+      <button class="btn" onclick="openExport()">⬇ Export</button>
+      <button class="btn" onclick="openProjects()">⚙ Projects</button>
+      <button class="btn primary" onclick="openLeadModal()">+ Add Lead</button>
+      <button class="btn primary" onclick="openCampaignModal()">+ Add Campaign</button>
+      <button class="btn icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabNav">
+    <button class="on" data-tab="dashboard" onclick="showTab('dashboard')">📊 Dashboard</button>
+    <button data-tab="prospect" onclick="showTab('prospect')">🔍 Prospecting <span class="cnt" id="cntProspects">0</span></button>
+    <button data-tab="pipeline" onclick="showTab('pipeline')">🎯 Pipeline</button>
+    <button data-tab="content" onclick="showTab('content')">🧠 Content <span class="cnt" id="cntContent">0</span></button>
+    <button data-tab="logs" onclick="showTab('logs')">🗒 Logs <span class="cnt" id="cntLogs">0</span></button>
+    <button data-tab="settings" onclick="showTab('settings')">🔐 Settings</button>
+  </nav>
+
+  <section class="tab-page on" id="page-dashboard">
+  <div class="filterbar">
+    <div class="filter-group"><label>Project</label><select id="fProject" onchange="renderAll()"></select></div>
+    <div class="filter-group"><label>Channel</label><select id="fChannel" onchange="renderAll()"></select></div>
+    <div class="filter-group"><label>Date range</label>
+      <select id="fRange" onchange="renderAll()">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="365">Last 12 months</option>
+        <option value="all">All time</option>
+      </select>
+    </div>
+    <div class="filter-spacer"></div>
+    <div style="font-size:12px;color:var(--text3)" id="compareNote"></div>
+  </div>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <div class="grid cols-3-2">
+    <div class="card">
+      <div class="card-head"><div><h3>Leads over time</h3><div class="sub" id="trendSub"></div></div></div>
+      <div class="chart-box tall"><canvas id="chTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Leads by source</h3><div class="sub">Where your leads come from</div>
+      <div class="chart-box tall"><canvas id="chSource"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid cols-1-1-1">
+    <div class="card">
+      <h3>Acquisition funnel</h3><div class="sub">Impressions → won deals</div>
+      <div class="funnel" id="funnel"></div>
+    </div>
+    <div class="card">
+      <h3>Leads by project</h3><div class="sub">Volume &amp; qualified split</div>
+      <div class="chart-box"><canvas id="chProject"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Cost per lead by channel</h3><div class="sub">Paid channels only</div>
+      <div class="chart-box"><canvas id="chCPL"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-head">
+      <div><h3>Campaign performance</h3><div class="sub">Click a column to sort</div></div>
+    </div>
+    <div class="table-scroll">
+      <table id="tblCampaigns">
+        <thead><tr>
+          <th data-k="name">Campaign <span class="arrow"></span></th>
+          <th data-k="project">Project <span class="arrow"></span></th>
+          <th data-k="channel">Channel <span class="arrow"></span></th>
+          <th class="num" data-k="impressions">Impr. <span class="arrow"></span></th>
+          <th class="num" data-k="clicks">Clicks <span class="arrow"></span></th>
+          <th class="num" data-k="ctr">CTR <span class="arrow"></span></th>
+          <th class="num" data-k="spend">Spend <span class="arrow"></span></th>
+          <th class="num" data-k="cpc">CPC <span class="arrow"></span></th>
+          <th class="num" data-k="leads">Leads <span class="arrow"></span></th>
+          <th class="num" data-k="cpl">CPL <span class="arrow"></span></th>
+          <th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="table-foot"><span id="campCount"></span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><h3>Leads</h3><div class="sub">Most recent first &middot; update status inline</div></div>
+      <div style="min-width:220px"><input type="text" id="leadSearch" placeholder="Search name, email, source…" oninput="renderLeadsTable()"></div>
+    </div>
+    <div class="table-scroll">
+      <table id="tblLeads">
+        <thead><tr>
+          <th>Lead</th><th>Project</th><th>Source</th><th>Status</th>
+          <th class="num">Value</th><th>Date</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="table-foot">
+      <span id="leadCount"></span>
+      <button class="btn sm" id="showMoreBtn" onclick="leadsShown+=25;renderLeadsTable()" style="display:none">Show more</button>
+    </div>
+  </div>
+  </section><!-- /page-dashboard -->
+
+  <!-- ================= PROSPECTING TAB ================= -->
+  <section class="tab-page" id="page-prospect">
+    <div class="search-hero">
+      <div class="search-row">
+        <div class="grow form-field"><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Business search</label>
+          <input type="text" id="psQuery" placeholder="e.g. plumbers in Austin, TX" onkeydown="if(event.key==='Enter')runSearch()"></div>
+        <div class="form-field" style="min-width:170px"><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Project</label><select id="psProject"></select></div>
+        <button class="btn primary" style="height:37px" onclick="runSearch()">🔍 Search</button>
+        <button class="btn" style="height:37px" onclick="saveSearch()">☆ Save search</button>
+        <button class="btn" style="height:37px" onclick="openProspectImport()">⬆ Import CSV</button>
+        <button class="btn" style="height:37px" onclick="exportProspects()">⬇ Export</button>
+      </div>
+      <div class="criteria">
+        <div class="form-field"><label>Min rating</label><select id="crRating"><option value="0">Any</option><option value="4" selected>4.0+</option><option value="4.5">4.5+</option></select></div>
+        <div class="form-field"><label>Min reviews</label><select id="crMinRev"><option value="0">Any</option><option value="15" selected>15+</option><option value="50">50+</option></select></div>
+        <div class="form-field"><label>Max reviews</label><select id="crMaxRev"><option value="0">Any</option><option value="100">≤100 (best fit)</option><option value="300">≤300</option></select></div>
+        <div class="form-field"><label>Website</label><select id="crWebsite"><option value="any">Any</option><option value="no">No site (gap!)</option><option value="yes">Has site</option></select></div>
+        <div class="form-field"><label>Exclude franchises</label><select id="crFranchise"><option value="yes" selected>Yes</option><option value="no">No</option></select></div>
+        <div class="form-field" style="flex:1;min-width:180px"><label>Extra exclusions (comma-sep)</label><input type="text" id="crExclude" placeholder="names already contacted…"></div>
+      </div>
+      <div class="saved-searches" id="savedSearches"></div>
+    </div>
+    <div class="results-note" id="psNote">Run a live search (needs Google Places key in Settings) or import a prospect CSV. Results appear here for review before you add them as prospects.</div>
+    <div id="psResults"></div>
+
+    <div class="card" style="margin-top:6px">
+      <div class="card-head">
+        <div><h3>Prospect list</h3><div class="sub">Your vetted batch — click a card to open the full record</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="pFilter" placeholder="Filter prospects…" oninput="renderProspects()" style="min-width:170px">
+          <select id="pStatusFilter" onchange="renderProspects()" style="width:auto"><option value="all">All statuses</option></select>
+          <select id="pProjFilter" onchange="renderProspects()" style="width:auto"></select>
+          <button class="btn sm" id="pFavOnly" onclick="favOnly=!favOnly;this.classList.toggle('primary',favOnly);renderProspects()">★ Favorites</button>
+        </div>
+      </div>
+      <div id="prospectList"></div>
+    </div>
+  </section>
+
+  <!-- ================= PIPELINE TAB ================= -->
+  <section class="tab-page" id="page-pipeline">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head"><div><h3>Prospect pipeline</h3><div class="sub">New → Audit Recorded → Audit Sent → Replied → Call Booked → Client / Dead. Use ◀ ▶ to move a card.</div></div>
+      <select id="kbProjFilter" onchange="renderKanban()" style="width:auto"></select></div>
+      <div class="kanban" id="kanban"></div>
+    </div>
+  </section>
+
+  <!-- ================= CONTENT STUDIO TAB ================= -->
+  <section class="tab-page" id="page-content">
+    <div class="search-hero">
+      <div class="search-row">
+        <div class="form-field" style="min-width:200px"><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Brand</label>
+          <select id="csBrand" onchange="csBrandChanged()"></select></div>
+        <div class="grow form-field"><label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Ask the marketing system anything</label>
+          <input type="text" id="csAsk" placeholder='e.g. "3 X post ideas from what I shipped today" or "launch email for the newsletter restart"' onkeydown="if(event.key==='Enter')openSkill('freeform')"></div>
+        <button class="btn primary" style="height:37px" onclick="openSkill('freeform')">✨ Generate</button>
+      </div>
+      <div class="skill-grid" id="csSkills"></div>
+      <div class="results-note" id="csKeyNote"></div>
+    </div>
+
+    <div class="grid cols-3-2" style="align-items:start">
+      <div class="card">
+        <div class="card-head">
+          <div><h3>Content library</h3><div class="sub">Draft → Ready → Posted · click an item to open &amp; edit</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="libSearch" placeholder="Search…" oninput="renderLibrary()" style="min-width:120px">
+            <select id="libBrand" onchange="renderLibrary()" style="width:auto"></select>
+            <select id="libType" onchange="renderLibrary()" style="width:auto"></select>
+            <select id="libStatus" onchange="renderLibrary()" style="width:auto"><option value="all">All statuses</option><option>Draft</option><option>Ready</option><option>Posted</option></select>
+            <button class="btn sm" onclick="exportContentMd()">⬇ .md</button>
+          </div>
+        </div>
+        <div id="libList"></div>
+        <div class="table-foot"><span id="libCount"></span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>📓 Journal</h3><div class="sub">Raw material from real work — write it down, turn it into content later</div></div></div>
+        <div class="form-field" style="margin-bottom:8px"><input type="text" id="jrTitle" placeholder="Title (optional)"></div>
+        <div class="form-field" style="margin-bottom:8px"><textarea id="jrText" rows="4" placeholder="What happened today? What did you build, test, fix, learn, ship?"></textarea></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+          <button class="btn primary sm" id="jrSaveBtn" onclick="saveJournal()">+ Save entry</button>
+          <button class="btn sm" id="jrCancelBtn" onclick="cancelJournalEdit()" style="display:none">Cancel edit</button>
+          <span class="hint" id="jrCount" style="margin-top:0"></span>
+        </div>
+        <div id="jrList" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= LOGS TAB ================= -->
+  <section class="tab-page" id="page-logs">
+    <div class="card">
+      <div class="card-head">
+        <div><h3>Activity log</h3><div class="sub">Every search, draft, send, and change — automatically recorded</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" id="logSearch" placeholder="Search logs…" oninput="renderLogs()" style="min-width:200px">
+          <select id="logType" onchange="renderLogs()" style="width:auto"><option value="all">All types</option></select>
+          <button class="btn sm" onclick="exportLogs()">⬇ Export</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="tblLogs"><thead><tr><th>When</th><th>Type</th><th>Subject</th><th>Detail</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="table-foot"><span id="logCount"></span>
+        <button class="btn sm" id="logMoreBtn" onclick="logsShown+=50;renderLogs()" style="display:none">Show more</button></div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS TAB ================= -->
+  <section class="tab-page" id="page-settings">
+    <div class="warn-box">⚠ <b>Credentials live only in this browser's localStorage on this computer.</b> They never leave your machine except to call the APIs you configure. Don't use this file on a shared computer, and keep JSON backups somewhere safe — backups include these keys.</div>
+    <div class="cred-grid">
+      <div class="cred-card">
+        <h3>🌐 Global API keys</h3><div class="sub" style="font-size:12px;color:var(--text3);margin-bottom:12px">Used across all projects</div>
+        <div class="form-field"><label>Google Places API key — live business search</label>
+          <div class="key-input"><input type="password" id="setPlacesKey" placeholder="AIza…"><button class="btn sm" onclick="togglePw('setPlacesKey')">👁</button><button class="btn sm" onclick="testConnection('places')">🔌 Test</button></div>
+          <div class="hint">Google Cloud Console → enable "Places API (New)" → create key. Free tier easily covers prospecting volume.</div></div>
+        <div class="form-field"><label>AI provider — outreach drafts &amp; Content Studio</label>
+          <select id="setAiProvider">
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="openai">OpenAI</option>
+            <option value="openrouter">OpenRouter</option>
+          </select>
+          <div class="hint">All keys are saved; this picks which one the AI buttons use.</div></div>
+        <div class="form-field"><label>Claude API key</label>
+          <div class="key-input"><input type="password" id="setClaudeKey" placeholder="sk-ant-…"><button class="btn sm" onclick="togglePw('setClaudeKey')">👁</button><button class="btn sm" onclick="testConnection('claude')">🔌 Test</button></div>
+          <div class="hint">console.anthropic.com → API keys.</div></div>
+        <div class="form-field"><label>Claude model</label><input type="text" id="setClaudeModel" placeholder="claude-sonnet-5"></div>
+        <div class="form-field"><label>OpenAI API key</label>
+          <div class="key-input"><input type="password" id="setOpenaiKey" placeholder="sk-…"><button class="btn sm" onclick="togglePw('setOpenaiKey')">👁</button><button class="btn sm" onclick="testConnection('openai')">🔌 Test</button></div>
+          <div class="hint">platform.openai.com → API keys.</div></div>
+        <div class="form-field"><label>OpenAI model</label><input type="text" id="setOpenaiModel" placeholder="gpt-5.6"><div class="hint">gpt-5.6-terra is the cheaper/faster option.</div></div>
+        <div class="form-field"><label>OpenRouter API key</label>
+          <div class="key-input"><input type="password" id="setOpenrouterKey" placeholder="sk-or-…"><button class="btn sm" onclick="togglePw('setOpenrouterKey')">👁</button><button class="btn sm" onclick="testConnection('openrouter')">🔌 Test</button></div>
+          <div class="hint">openrouter.ai → Keys. One key, 400+ models.</div></div>
+        <div class="form-field"><label>OpenRouter model</label><input type="text" id="setOpenrouterModel" placeholder="anthropic/claude-sonnet-5"><div class="hint">Any ID from openrouter.ai/models — e.g. openai/gpt-5.6, or openrouter/free for $0 testing.</div></div>
+        <div class="hint" id="testResult" style="min-height:16px"></div>
+        <button class="btn primary" onclick="saveGlobalSettings()">Save global settings</button>
+        <div class="hint">Without any AI key, drafts fall back to smart templates.</div>
+      </div>
+      <div class="cred-card">
+        <h3>📁 Per-project credentials</h3><div class="sub" style="font-size:12px;color:var(--text3);margin-bottom:12px">Handles &amp; keys for the selected project</div>
+        <div class="form-field"><label>Project</label><select id="setProject" onchange="loadProjectSettings()"></select></div>
+        <div class="form-field"><label>MailerLite API key</label><div class="key-input"><input type="password" id="setML" placeholder="eyJ…"><button class="btn sm" onclick="togglePw('setML')">👁</button></div></div>
+        <div class="form-field"><label>Supabase URL + anon key (future sync)</label><input type="text" id="setSbUrl" placeholder="https://xxxx.supabase.co" style="margin-bottom:6px"><div class="key-input"><input type="password" id="setSbKey" placeholder="anon key"><button class="btn sm" onclick="togglePw('setSbKey')">👁</button></div></div>
+        <div class="form-grid">
+          <div class="form-field"><label>X handle</label><input type="text" id="setX" placeholder="@yourbrand"></div>
+          <div class="form-field"><label>Instagram handle</label><input type="text" id="setIG" placeholder="@yourbrand"></div>
+          <div class="form-field"><label>LinkedIn URL</label><input type="text" id="setLI" placeholder="linkedin.com/company/…"></div>
+          <div class="form-field"><label>Meta Business ID</label><input type="text" id="setMeta" placeholder=""></div>
+          <div class="form-field full"><label>Sender identity (used in drafts)</label><input type="text" id="setSender" placeholder="Your name from Your Company — one line on who you help"></div>
+          <div class="form-field full"><label>Booking / audit link (used in drafts)</label><input type="text" id="setBooking" placeholder="https://cal.com/…"></div>
+        </div>
+        <button class="btn primary" onclick="saveProjectSettings()">Save project credentials</button>
+      </div>
+      <div class="cred-card" style="grid-column:1/-1">
+        <h3>🧠 Brand voice profiles — Content Studio</h3>
+        <div class="sub" style="font-size:12px;color:var(--text3);margin-bottom:12px">Sample brand profiles are provided as placeholders. Edit them here to match your own brands — changes are saved in this browser only. Every Content Studio draft is written from the selected profile.</div>
+        <div class="form-field" style="max-width:320px"><label>Brand</label><select id="setBrand" onchange="loadBrandProfile()"></select></div>
+        <div class="form-grid">
+          <div class="form-field full"><label>Voice &amp; style</label><textarea id="sbVoice" rows="4"></textarea></div>
+          <div class="form-field"><label>Audience</label><textarea id="sbAudience" rows="4"></textarea></div>
+          <div class="form-field"><label>Offer &amp; links</label><textarea id="sbOffer" rows="4"></textarea></div>
+          <div class="form-field"><label>CTA style</label><textarea id="sbCta" rows="2"></textarea></div>
+          <div class="form-field"><label>Never use (words / tones)</label><textarea id="sbAvoid" rows="2"></textarea></div>
+          <div class="form-field full"><label>Content pillars</label><textarea id="sbPillars" rows="3"></textarea></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn primary" onclick="saveBrandProfile()">Save brand profile</button>
+          <button class="btn" onclick="resetBrandProfile()">↺ Reset to sample default</button>
+        </div>
+      </div>
+      <div class="cred-card" style="grid-column:1/-1">
+        <h3>🔌 Ad &amp; marketing channel connections</h3>
+        <div class="sub" style="font-size:12px;color:var(--text3);margin-bottom:12px">Connect the ad, analytics, and email/CRM platforms you want to track. Credentials are stored in this browser only (localStorage) and never leave your machine except to call the API you configure. Fill a field and Save to mark a channel <b>Connected</b>.</div>
+        <div id="connGrid" class="form-grid"></div>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <button class="btn primary" onclick="saveConnections()">Save connections</button>
+          <button class="btn" onclick="clearConnections()">Clear all</button>
+        </div>
+        <div class="hint" style="margin-top:8px">Note: most ad platforms (Google Ads, Meta, LinkedIn, TikTok) use OAuth and can't be called directly from a static page for live reporting data. This screen stores your credentials and tracks connection status; wiring each live data pull is a per-channel step (search for <code>// LIVE FETCH STUB</code> in the source).</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Data is stored locally in this browser (localStorage) &middot; use Export for backups &middot; open-source lead-gen dashboard</footer>
+</div>
+
+<!-- ===== Content Studio: compose modal ===== -->
+<div class="overlay" id="mCompose"><div class="modal wide">
+  <h2 id="csTitle">✨ Create content</h2>
+  <div class="hint" id="csDesc" style="margin:-10px 0 14px"></div>
+  <div class="form-grid">
+    <div class="form-field"><label>Brand</label><select id="csCBrand" onchange="csFillBrandFields()"></select></div>
+    <div class="form-field"><label>Goal — what should this do?</label><input type="text" id="csGoal" placeholder="e.g. get replies from builders / restart the newsletter"></div>
+    <div class="form-field" id="csRowOuttype"><label>Output type</label><select id="csOuttype" onchange="csToggleRows()">
+      <option value="xpost">X posts (3 options)</option><option value="thread">X thread</option><option value="linkedin">LinkedIn post</option>
+      <option value="blog">Blog post</option><option value="article">Article</option><option value="email">Email</option><option value="pack">Multi-day pack</option></select></div>
+    <div class="form-field" id="csRowKind"><label>Style</label><select id="csKind"><option value="blog">Blog post (SEO headers)</option><option value="article">Narrative article</option></select></div>
+    <div class="form-field" id="csRowLen"><label>Length</label><select id="csLen"><option value="500">Short · ~500 words</option><option value="800" selected>Standard · ~800</option><option value="1200">Long · ~1200</option></select></div>
+    <div class="form-field" id="csRowDays"><label>Days</label><select id="csDays"><option>2</option><option selected>3</option><option>7</option></select></div>
+    <div class="form-field full" id="csRowPlatforms"><label>Platforms — one asset per platform per day</label>
+      <div class="pf-checks">
+        <label><input type="checkbox" id="csPfX" checked> 𝕏 X</label>
+        <label><input type="checkbox" id="csPfLi" checked> 💼 LinkedIn</label>
+        <label><input type="checkbox" id="csPfBlog"> 📝 Blog</label>
+      </div></div>
+    <div class="form-field full" id="csRowLink"><label>Source link — reference only. Browsers can't fetch X links, so paste the post text below.</label><input type="text" id="csLink" placeholder="https://x.com/…"></div>
+    <div class="form-field full"><label id="csSrcLabel">Source material — journal text, notes, pasted post, transcript…</label><textarea id="csSource" rows="6"></textarea></div>
+    <div class="form-field full"><label>Audience / offer / CTA — prefilled from the brand profile, edit freely</label><textarea id="csCtx" rows="3"></textarea></div>
+  </div>
+  <div class="gen-row">
+    <button class="btn primary" id="csGenBtn" onclick="csGenerate()">✨ Generate</button>
+    <span class="ai-note" id="csStatus" style="margin-top:0;align-self:center"></span>
+  </div>
+  <div id="csResults"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('mCompose')">Close</button></div>
+</div></div>
+
+<!-- ===== Content Studio: view/edit modal ===== -->
+<div class="overlay" id="mCView"><div class="modal wide">
+  <h2>Edit content</h2>
+  <div class="form-grid">
+    <div class="form-field full"><label>Title</label><input type="text" id="cvTitle"></div>
+    <div class="form-field"><label>Status</label><select id="cvStatus"><option>Draft</option><option>Ready</option><option>Posted</option></select></div>
+    <div class="form-field"><label>Info</label><div class="hint" id="cvMeta" style="margin-top:9px"></div></div>
+    <div class="form-field full"><label>Body</label><textarea id="cvBody" rows="14" class="draft-box"></textarea></div>
+  </div>
+  <div class="modal-actions" style="justify-content:space-between">
+    <button class="btn danger" onclick="cvDelete()">🗑 Delete</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="cvCopy()">📋 Copy</button>
+      <button class="btn" onclick="closeModal('mCView')">Close</button>
+      <button class="btn primary" onclick="cvSave()">Save</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- ===== Lead modal ===== -->
+<div class="overlay" id="mLead"><div class="modal">
+  <h2 id="mLeadTitle">Add lead</h2>
+  <div class="form-grid">
+    <div class="form-field"><label>Name *</label><input type="text" id="lName" placeholder="Jane Smith"></div>
+    <div class="form-field"><label>Email / contact</label><input type="text" id="lEmail" placeholder="jane@example.com"></div>
+    <div class="form-field"><label>Project *</label><select id="lProject"></select></div>
+    <div class="form-field"><label>Source / channel *</label><select id="lSource"></select></div>
+    <div class="form-field"><label>Status</label><select id="lStatus"></select></div>
+    <div class="form-field"><label>Est. value ($)</label><input type="number" id="lValue" min="0" step="10" placeholder="0"></div>
+    <div class="form-field"><label>Date</label><input type="date" id="lDate"></div>
+    <div class="form-field"><label>Campaign (optional)</label><select id="lCampaign"></select></div>
+    <div class="form-field full"><label>Notes</label><textarea id="lNotes" rows="2" placeholder="Context, next step…"></textarea></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('mLead')">Cancel</button>
+    <button class="btn primary" onclick="saveLead()">Save lead</button>
+  </div>
+</div></div>
+
+<!-- ===== Campaign modal ===== -->
+<div class="overlay" id="mCampaign"><div class="modal">
+  <h2 id="mCampTitle">Add campaign</h2>
+  <div class="form-grid">
+    <div class="form-field full"><label>Campaign name *</label><input type="text" id="cName" placeholder="Summer promo — Google Search"></div>
+    <div class="form-field"><label>Project *</label><select id="cProject"></select></div>
+    <div class="form-field"><label>Channel *</label><select id="cChannel"></select></div>
+    <div class="form-field"><label>Start date</label><input type="date" id="cStart"></div>
+    <div class="form-field"><label>End date</label><input type="date" id="cEnd"></div>
+    <div class="form-field"><label>Impressions</label><input type="number" id="cImpr" min="0" placeholder="0"></div>
+    <div class="form-field"><label>Clicks</label><input type="number" id="cClicks" min="0" placeholder="0"></div>
+    <div class="form-field"><label>Spend ($)</label><input type="number" id="cSpend" min="0" step="0.01" placeholder="0.00"></div>
+  </div>
+  <p class="hint">Leads are tied to campaigns from the Add Lead form. CPL and funnel numbers combine campaign metrics with leads in the selected date range.</p>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('mCampaign')">Cancel</button>
+    <button class="btn primary" onclick="saveCampaign()">Save campaign</button>
+  </div>
+</div></div>
+
+<!-- ===== Projects modal ===== -->
+<div class="overlay" id="mProjects"><div class="modal">
+  <h2>Projects</h2>
+  <div class="proj-list" id="projList"></div>
+  <div class="form-grid">
+    <div class="form-field full"><label>New project name</label><input type="text" id="pName" placeholder="My next venture"></div>
+    <div class="form-field full"><label>Color</label><div class="color-swatches" id="pColors"></div></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('mProjects')">Close</button>
+    <button class="btn primary" onclick="addProject()">+ Add project</button>
+  </div>
+</div></div>
+
+<!-- ===== Import modal ===== -->
+<div class="overlay" id="mImport"><div class="modal">
+  <h2>Import CSV</h2>
+  <div class="seg">
+    <button id="segLeads" class="on" onclick="importType='leads';setSeg()">Leads</button>
+    <button id="segCamps" onclick="importType='campaigns';setSeg()">Campaigns</button>
+  </div>
+  <div class="file-drop" onclick="document.getElementById('csvFile').click()">
+    <div style="font-size:26px;margin-bottom:6px">📄</div>
+    <b>Click to choose a .csv file</b>
+    <div class="hint" id="importHint"></div>
+  </div>
+  <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="handleCSV(this)">
+  <p class="hint">New project or channel names in the file are created automatically. Export first to see the exact column format.</p>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('mImport')">Close</button></div>
+</div></div>
+
+<!-- ===== Export modal ===== -->
+<div class="overlay" id="mExport"><div class="modal">
+  <h2>Export</h2>
+  <p class="hint" style="margin-bottom:14px">Downloads reflect ALL data (not just the current filter).</p>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <button class="btn" onclick="exportCSV('leads')">⬇ Leads (.csv)</button>
+    <button class="btn" onclick="exportCSV('campaigns')">⬇ Campaigns (.csv)</button>
+    <button class="btn" onclick="exportJSON()">⬇ Full backup (.json)</button>
+    <button class="btn" onclick="document.getElementById('jsonFile').click()">⬆ Restore backup (.json)</button>
+    <input type="file" id="jsonFile" accept=".json" style="display:none" onchange="restoreJSON(this)">
+  </div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('mExport')">Close</button></div>
+</div></div>
+
+<!-- ===== Prospect detail modal ===== -->
+<div class="overlay" id="mProspect"><div class="modal wide">
+  <h2 id="mProsTitle">Prospect</h2>
+  <div class="detail-grid">
+    <div class="form-field"><label>Business name *</label><input type="text" id="prName"></div>
+    <div class="form-field"><label>Project</label><select id="prProject"></select></div>
+    <div class="form-field"><label>Vertical</label><input type="text" id="prVertical" placeholder="plumber"></div>
+    <div class="form-field"><label>City / Area</label><input type="text" id="prCity" placeholder="City, State"></div>
+    <div class="form-field"><label>Website</label><input type="text" id="prWebsite"></div>
+    <div class="form-field"><label>Google Profile URL</label><input type="text" id="prGUrl"></div>
+    <div class="form-field"><label>Rating</label><input type="number" id="prRating" step="0.1" min="0" max="5"></div>
+    <div class="form-field"><label>Review count</label><input type="number" id="prReviews" min="0"></div>
+    <div class="form-field"><label>Contact name</label><input type="text" id="prContact"></div>
+    <div class="form-field"><label>Email</label><input type="text" id="prEmail"></div>
+    <div class="form-field"><label>Phone</label><input type="text" id="prPhone"></div>
+    <div class="form-field"><label>Best contact path</label><select id="prPath"><option>email</option><option>contact form</option><option>phone</option><option>DM</option><option value="">unknown</option></select></div>
+    <div class="form-field"><label>X handle</label><input type="text" id="prX" placeholder="@business"></div>
+    <div class="form-field"><label>Instagram handle</label><input type="text" id="prIG" placeholder="@business"></div>
+    <div class="form-field"><label>LinkedIn URL</label><input type="text" id="prLI"></div>
+    <div class="form-field"><label>Status</label><select id="prStatus"></select></div>
+    <div class="form-field full"><label>Local visibility observation (what you saw, dated — no rank claims)</label><textarea id="prObs" rows="2"></textarea></div>
+    <div class="form-field full"><label>Visibility gap (the spotted issue — drives outreach)</label><textarea id="prGap" rows="2"></textarea></div>
+    <div class="form-field"><label>Evidence URL</label><input type="text" id="prEvidence"></div>
+    <div class="form-field"><label>Search query it came from</label><input type="text" id="prQuery"></div>
+    <div class="form-field full"><label>Audit angle (your opening line)</label><textarea id="prAngle" rows="2"></textarea></div>
+    <div class="form-field full"><label>Notes</label><textarea id="prNotes" rows="2"></textarea></div>
+  </div>
+  <div class="score-calc">
+    <b style="font-size:13px">Score (workflow rubric)</b>
+    <div class="sc-row"><span>Gap severity + demo-ability (4 = big gap you can Loom in 60s)</span><select id="scGap"><option value="0">0 — vague</option><option value="1">1</option><option value="2">2 — one clear gap</option><option value="3">3</option><option value="4">4 — multiple/big</option></select></div>
+    <div class="sc-row"><span>Contact path quality (3 = named person + direct email)</span><select id="scPath"><option value="0">0 — none</option><option value="1">1 — phone only</option><option value="2">2 — generic email/form</option><option value="3">3 — direct email</option></select></div>
+    <div class="sc-row"><span>Review base fit (2 = 15–100 reviews at 4.0–4.7)</span><select id="scRev"><option value="0">0</option><option value="1">1 — 100+ or 4.8+</option><option value="2">2 — sweet spot</option></select></div>
+    <div class="sc-row"><span>Independence confidence</span><select id="scInd"><option value="0">0 — unsure</option><option value="1">1 — clearly independent</option></select></div>
+    <div class="sc-row"><b>Total: <span id="scTotal">0</span>/10 — Priority <span id="scPriority">—</span></b><span></span></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn danger" id="prDeleteBtn" onclick="deleteProspect()">Delete</button>
+    <span style="flex:1"></span>
+    <button class="btn" onclick="closeModal('mProspect')">Cancel</button>
+    <button class="btn" onclick="convertToLead()">→ Convert to lead</button>
+    <button class="btn primary" onclick="saveProspect()">Save</button>
+  </div>
+</div></div>
+
+<!-- ===== Outreach modal ===== -->
+<div class="overlay" id="mOutreach"><div class="modal wide">
+  <h2>Outreach — <span id="orName"></span></h2>
+  <div class="hint" style="margin-bottom:10px" id="orGap"></div>
+  <div class="channel-grid">
+    <button data-ch="email" onclick="setChannel('email')"><span>✉️</span>Email</button>
+    <button data-ch="x" onclick="setChannel('x')"><span>𝕏</span>X DM</button>
+    <button data-ch="linkedin" onclick="setChannel('linkedin')"><span>💼</span>LinkedIn</button>
+    <button data-ch="instagram" onclick="setChannel('instagram')"><span>📸</span>IG DM</button>
+    <button data-ch="phone" onclick="setChannel('phone')"><span>📞</span>Call script</button>
+    <button data-ch="video" onclick="setChannel('video')"><span>🎬</span>Video script</button>
+  </div>
+  <div class="form-field" id="orSubjWrap" style="margin-bottom:8px"><label>Subject</label><input type="text" id="orSubject"></div>
+  <div class="form-field"><label>Draft</label><textarea id="orDraft" class="draft-box"></textarea></div>
+  <div class="gen-row">
+    <button class="btn" onclick="generateDraft(false)">⚙ Template draft</button>
+    <button class="btn primary" id="aiBtn" onclick="generateDraft(true)">✨ AI draft</button>
+    <span style="flex:1"></span>
+    <button class="btn" onclick="copyDraft()">📋 Copy</button>
+    <button class="btn primary" id="orSendBtn" onclick="openChannel()">Open channel ↗</button>
+  </div>
+  <div class="ai-note" id="orNote"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('mOutreach')">Close</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   LEAD GENERATION DASHBOARD — data layer
+   ============================================================ */
+const LS_KEY='leadgen_dashboard_v1';
+const CHANNELS=['Google Ads','Meta Ads','SEO / Organic','Email / Newsletter','Social Organic','Referral','Cold Outreach','Other'];
+const PAID=['Google Ads','Meta Ads'];
+const STATUSES=['New','Contacted','Qualified','Won','Lost'];
+const STATUS_COLORS={New:'#3b82f6',Contacted:'#f59e0b',Qualified:'#8b5cf6',Won:'#10b981',Lost:'#94a3b8'};
+const PALETTE=['#4f46e5','#10b981','#f97316','#ec4899','#14b8a6','#8b5cf6','#f59e0b','#3b82f6','#ef4444','#84cc16'];
+
+let db={projects:[],leads:[],campaigns:[],meta:{demo:false}};
+let leadsShown=25, importType='leads', editLeadId=null, editCampId=null, selColor=PALETTE[0];
+let sortKey='spend', sortDir=-1;
+
+const $=id=>document.getElementById(id);
+const uid=()=> Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':Math.round(n).toLocaleString();
+const money=n=>'$'+(n>=1e4?fmt(n):n.toLocaleString(undefined,{maximumFractionDigits:0}));
+const money2=n=>'$'+n.toFixed(2);
+const pct=n=>isFinite(n)?(n*100).toFixed(1)+'%':'—';
+const iso=d=>d.toISOString().slice(0,10);
+
+function save(){localStorage.setItem(LS_KEY,JSON.stringify(db))}
+function load(){
+  const raw=localStorage.getItem(LS_KEY);
+  if(raw){try{db=JSON.parse(raw);return}catch(e){}}
+  seedDemo();
+}
+
+/* ---------- demo data ---------- */
+function seedDemo(){
+  const projs=[
+    {name:'Acme Web Studio',color:'#4f46e5',weight:1.4,val:[80,400]},
+    {name:'BrightLocal SEO',color:'#10b981',weight:1.8,val:[150,900]},
+    {name:'FreshBox App',color:'#f97316',weight:1.0,val:[20,120]},
+    {name:'Grant Finder',color:'#ec4899',weight:0.7,val:[40,250]}
+  ];
+  db={projects:[],leads:[],campaigns:[],meta:{demo:true}};
+  projs.forEach(p=>db.projects.push({id:uid(),name:p.name,color:p.color}));
+  const P=db.projects;
+  // deterministic-ish RNG
+  let s=42; const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const today=new Date(); today.setHours(12,0,0,0);
+  const sourceMix=[['Google Ads',.22],['Meta Ads',.18],['SEO / Organic',.2],['Email / Newsletter',.15],['Social Organic',.1],['Referral',.09],['Cold Outreach',.06]];
+  const first=['Alex','Maria','Devon','Sam','Priya','Chris','Tanya','Luis','Kim','Jordan','Nia','Omar','Beth','Carl','Dana','Eli','Faye','Gus','Hana','Ivan','Jade','Kofi','Lena','Marc','Nora','Owen','Pia','Quinn','Rosa','Seth','Tara','Umar','Vera','Will','Xena','Yara','Zane'];
+  const last=['Rivera','Chen','Okafor','Smith','Patel','Johnson','Garcia','Kim','Nguyen','Brown','Lopez','Wright','Diaz','Khan','Moore','Silva','Adams','Bell','Cole','Reed'];
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const pickSource=()=>{let r=rnd(),acc=0;for(const[srcName,w]of sourceMix){acc+=w;if(r<=acc)return srcName}return 'Other'};
+  // campaigns (paid) — some running, some ended
+  const campDefs=[
+    ['Search — plumbers & trades','BrightLocal SEO','Google Ads',110,0,3.1,52],
+    ['Local services retargeting','BrightLocal SEO','Meta Ads',95,10,1.6,38],
+    ['Newsletter growth — lookalike','Acme Web Studio','Meta Ads',80,0,1.2,30],
+    ['Brand search','Acme Web Studio','Google Ads',120,30,2.4,26],
+    ['App installs — foodies','FreshBox App','Meta Ads',60,0,0.9,22],
+    ['Grant season push','Grant Finder','Google Ads',75,20,1.8,20],
+    ['Spring promo (ended)','BrightLocal SEO','Google Ads',150,95,2.8,25]
+  ];
+  campDefs.forEach(([name,proj,ch,ageStart,ageEnd,cpcBase,leadCount])=>{
+    const pr=P.find(x=>x.name===proj);
+    const start=new Date(today);start.setDate(start.getDate()-ageStart);
+    const end=ageEnd>0?new Date(today):null; if(end)end.setDate(end.getDate()-ageEnd);
+    const clicks=Math.round(leadCount*(8+rnd()*10));
+    const impressions=Math.round(clicks*(28+rnd()*35));
+    const spend=Math.round(clicks*(cpcBase*(0.85+rnd()*0.3))*100)/100;
+    db.campaigns.push({id:uid(),name,projectId:pr.id,channel:ch,impressions,clicks,spend,start:iso(start),end:end?iso(end):'',_leadTarget:leadCount});
+  });
+  // leads across 120 days, upward trend
+  for(let d=120;d>=0;d--){
+    const date=new Date(today);date.setDate(date.getDate()-d);
+    const trend=0.6+((120-d)/120)*0.9;               // growth over time
+    const dow=date.getDay(); const dowF=(dow===0||dow===6)?0.55:1; // weekday lift
+    P.forEach((pr,pi)=>{
+      const base=projs[pi].weight*trend*dowF;
+      let n=Math.floor(base*(rnd()*1.6));
+      if(rnd()<base*0.35)n++;
+      for(let i=0;i<n;i++){
+        const src=pickSource();
+        const r=rnd();
+        const status=d<7?(r<.6?'New':'Contacted'):r<.28?'Won':r<.46?'Qualified':r<.62?'Contacted':r<.82?'Lost':'New';
+        const[vmin,vmax]=projs[pi].val;
+        const value=(status==='Won'||status==='Qualified'||rnd()<.5)?Math.round((vmin+rnd()*(vmax-vmin))/5)*5:0;
+        // attach to a matching campaign when paid
+        let campaignId='';
+        if(PAID.includes(src)){
+          const c=db.campaigns.find(c=>c.projectId===pr.id&&c.channel===src&&c._leadTarget>0);
+          if(c){campaignId=c.id;c._leadTarget--}
+        }
+        const fn=pick(first),ln=pick(last);
+        db.leads.push({id:uid(),name:fn+' '+ln,email:(fn+'.'+ln).toLowerCase()+'@example.com',
+          projectId:pr.id,source:src,status,value,date:iso(date),campaignId,notes:''});
+      }
+    });
+  }
+  db.campaigns.forEach(c=>delete c._leadTarget);
+  save();
+}
+function clearDemo(){
+  if(!confirm('Remove ALL demo data? Projects are kept; leads & campaigns are wiped.'))return;
+  db.leads=[];db.campaigns=[];db.meta.demo=false;save();renderAll();toast('Demo data cleared — you\'re starting fresh');
+}
+
+/* ---------- filter helpers ---------- */
+function rangeDates(){
+  const v=$('fRange').value;
+  if(v==='all')return{from:null,to:null,prevFrom:null,prevTo:null,days:null};
+  const days=parseInt(v);
+  const to=new Date();to.setHours(23,59,59,999);
+  const from=new Date();from.setHours(0,0,0,0);from.setDate(from.getDate()-(days-1));
+  const prevTo=new Date(from);prevTo.setMilliseconds(-1);
+  const prevFrom=new Date(from);prevFrom.setDate(prevFrom.getDate()-days);
+  return{from,to,prevFrom,prevTo,days};
+}
+function leadInRange(l,from,to){const d=new Date(l.date+'T12:00:00');return(!from||d>=from)&&(!to||d<=to)}
+function filteredLeads(from,to){
+  const pj=$('fProject').value,ch=$('fChannel').value;
+  return db.leads.filter(l=>(pj==='all'||l.projectId===pj)&&(ch==='all'||l.source===ch)&&leadInRange(l,from,to));
+}
+/* prorate campaign metrics over overlap with the selected window */
+function campaignSlice(c,from,to){
+  const cs=new Date(c.start+'T00:00:00');
+  const ce=c.end?new Date(c.end+'T23:59:59'):new Date();
+  if(!from){const f=1;return{impressions:c.impressions*f,clicks:c.clicks*f,spend:c.spend*f}}
+  const os=Math.max(cs,from),oe=Math.min(ce,to);
+  if(oe<os)return{impressions:0,clicks:0,spend:0};
+  const total=Math.max(1,(ce-cs)/864e5),overlap=(oe-os)/864e5;
+  const f=Math.min(1,overlap/total);
+  return{impressions:c.impressions*f,clicks:c.clicks*f,spend:c.spend*f};
+}
+function filteredCampaigns(){
+  const pj=$('fProject').value,ch=$('fChannel').value;
+  return db.campaigns.filter(c=>(pj==='all'||c.projectId===pj)&&(ch==='all'||c.channel===ch));
+}
+function totals(from,to){
+  const leads=filteredLeads(from,to);
+  let impressions=0,clicks=0,spend=0;
+  filteredCampaigns().forEach(c=>{const s=campaignSlice(c,from,to);impressions+=s.impressions;clicks+=s.clicks;spend+=s.spend});
+  const qualified=leads.filter(l=>l.status==='Qualified'||l.status==='Won').length;
+  const won=leads.filter(l=>l.status==='Won');
+  const wonValue=won.reduce((a,l)=>a+(+l.value||0),0);
+  const pipeline=leads.filter(l=>['New','Contacted','Qualified'].includes(l.status)).reduce((a,l)=>a+(+l.value||0),0);
+  return{leads:leads.length,qualified,won:won.length,wonValue,pipeline,impressions,clicks,spend,
+    cpl:leads.length?spend/leads.length:NaN,convRate:leads.length?qualified/leads.length:NaN,
+    roi:spend>0?(wonValue-spend)/spend:NaN,leadList:leads};
+}
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+let charts={};
+function chart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart($(id).getContext('2d'),cfg)}
+const projById=id=>db.projects.find(p=>p.id===id);
+const projName=id=>{const p=projById(id);return p?p.name:'—'};
+const projColor=id=>{const p=projById(id);return p?p.color:'#94a3b8'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function chartTheme(){
+  const cs=getComputedStyle(document.documentElement);
+  return{grid:document.documentElement.dataset.theme==='dark'?'rgba(255,255,255,.07)':'rgba(16,24,40,.07)',
+    text:cs.getPropertyValue('--text2').trim()};
+}
+
+function renderFilters(){
+  const pj=$('fProject'),ch=$('fChannel');
+  const pv=pj.value||'all',cv=ch.value||'all';
+  pj.innerHTML='<option value="all">All projects</option>'+db.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  ch.innerHTML='<option value="all">All channels</option>'+CHANNELS.map(c=>`<option>${esc(c)}</option>`).join('');
+  pj.value=[...pj.options].some(o=>o.value===pv)?pv:'all';
+  ch.value=[...ch.options].some(o=>o.value===cv)?cv:'all';
+}
+
+function delta(cur,prev){
+  if(prev===0||!isFinite(prev)||prev==null)return'';
+  const d=(cur-prev)/Math.abs(prev);
+  if(!isFinite(d))return'';
+  const cls=Math.abs(d)<0.005?'flat':d>0?'up':'down';
+  const sign=d>0?'▲':d<0?'▼':'—';
+  return`<span class="k-delta ${cls}">${sign} ${Math.abs(d*100).toFixed(0)}%</span>`;
+}
+/* for metrics where DOWN is good (CPL) invert coloring */
+function deltaInv(cur,prev){
+  if(prev===0||!isFinite(prev)||!isFinite(cur))return'';
+  const d=(cur-prev)/Math.abs(prev);
+  const cls=Math.abs(d)<0.005?'flat':d<0?'up':'down';
+  const sign=d>0?'▲':d<0?'▼':'—';
+  return`<span class="k-delta ${cls}">${sign} ${Math.abs(d*100).toFixed(0)}%</span>`;
+}
+
+function renderKPIs(t,tPrev,hasPrev){
+  const D=(c,p,inv)=>hasPrev?(inv?deltaInv(c,p):delta(c,p)):'';
+  $('kpiRow').innerHTML=`
+    <div class="kpi"><div class="k-label">Total leads</div><div class="k-value">${fmt(t.leads)}</div>${D(t.leads,tPrev.leads)}<div class="k-sub">${t.won} won · ${fmt(t.qualified)} qualified</div></div>
+    <div class="kpi"><div class="k-label">Conversion rate</div><div class="k-value">${pct(t.convRate)}</div>${D(t.convRate,tPrev.convRate)}<div class="k-sub">lead → qualified/won</div></div>
+    <div class="kpi"><div class="k-label">Ad spend</div><div class="k-value">${money(t.spend)}</div>${D(t.spend,tPrev.spend)}<div class="k-sub">${fmt(t.clicks)} clicks · ${fmt(t.impressions)} impr.</div></div>
+    <div class="kpi"><div class="k-label">Cost per lead</div><div class="k-value">${isFinite(t.cpl)?money2(t.cpl):'—'}</div>${isFinite(t.cpl)&&isFinite(tPrev.cpl)?D(t.cpl,tPrev.cpl,true):''}<div class="k-sub">spend ÷ all leads</div></div>
+    <div class="kpi"><div class="k-label">Won revenue</div><div class="k-value">${money(t.wonValue)}</div>${D(t.wonValue,tPrev.wonValue)}<div class="k-sub">pipeline: ${money(t.pipeline)}</div></div>
+    <div class="kpi"><div class="k-label">ROI</div><div class="k-value">${isFinite(t.roi)?(t.roi*100).toFixed(0)+'%':'—'}</div>${isFinite(t.roi)&&isFinite(tPrev.roi)?D(t.roi,tPrev.roi):''}<div class="k-sub">(won − spend) ÷ spend</div></div>`;
+}
+
+function renderTrend(leads,from,to,days){
+  const th=chartTheme();
+  // bucket by day (<=31d) or week
+  let start=from?new Date(from):leads.length?new Date(Math.min(...leads.map(l=>+new Date(l.date+'T12:00:00')))):new Date();
+  let end=to?new Date(to):new Date();
+  const span=Math.max(1,Math.round((end-start)/864e5)+1);
+  const weekly=span>45;
+  const step=weekly?7:1;
+  const labels=[],newL=[],qualL=[];
+  for(let d=new Date(start);d<=end;d.setDate(d.getDate()+step)){
+    const b0=new Date(d),b1=new Date(d);b1.setDate(b1.getDate()+step-1);b1.setHours(23,59,59);
+    const bucket=leads.filter(l=>{const x=new Date(l.date+'T12:00:00');return x>=b0&&x<=b1});
+    labels.push(b0.toLocaleDateString(undefined,{month:'short',day:'numeric'}));
+    newL.push(bucket.length);
+    qualL.push(bucket.filter(l=>l.status==='Qualified'||l.status==='Won').length);
+  }
+  $('trendSub').textContent=weekly?'Weekly buckets':'Daily';
+  chart('chTrend',{type:'line',data:{labels,datasets:[
+    {label:'All leads',data:newL,borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.12)',fill:true,tension:.35,pointRadius:span>60?0:2,borderWidth:2},
+    {label:'Qualified + won',data:qualL,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.35,pointRadius:0,borderWidth:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:th.text,boxWidth:12,font:{size:11}}}},
+    scales:{x:{ticks:{color:th.text,maxTicksLimit:10,font:{size:10}},grid:{display:false}},
+            y:{beginAtZero:true,ticks:{color:th.text,precision:0,font:{size:10}},grid:{color:th.grid}}}}});
+}
+
+function renderSource(leads){
+  const th=chartTheme();
+  const counts={};leads.forEach(l=>counts[l.source]=(counts[l.source]||0)+1);
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const colors=['#4f46e5','#10b981','#f97316','#ec4899','#14b8a6','#8b5cf6','#f59e0b','#94a3b8'];
+  chart('chSource',{type:'doughnut',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'right',labels:{color:th.text,boxWidth:10,font:{size:11},padding:10}}}}});
+}
+
+function renderFunnel(t){
+  const stages=[
+    ['Impressions',t.impressions,'#3b82f6'],['Clicks',t.clicks,'#4f46e5'],
+    ['Leads',t.leads,'#8b5cf6'],['Qualified',t.qualified,'#f59e0b'],['Won',t.won,'#10b981']];
+  const max=Math.max(...stages.map(s=>s[1]),1);
+  $('funnel').innerHTML=stages.map((s,i)=>{
+    const prev=i>0?stages[i-1][1]:null;
+    const conv=prev>0?((s[1]/prev)*100).toFixed(1)+'% of prev':'';
+    const w=Math.max(3,Math.sqrt(s[1]/max)*100); // sqrt scale so small stages stay visible
+    return`<div class="f-row"><div class="f-label">${s[0]}</div>
+      <div class="f-track"><div class="f-bar" style="width:${w}%;background:${s[2]}">${fmt(s[1])}</div></div>
+      <div class="f-conv">${conv}</div></div>`;
+  }).join('');
+}
+
+function renderProjectChart(from,to){
+  const th=chartTheme();
+  const ch=$('fChannel').value;
+  const rows=db.projects.map(p=>{
+    const ls=db.leads.filter(l=>l.projectId===p.id&&(ch==='all'||l.source===ch)&&leadInRange(l,from,to));
+    return{name:p.name,color:p.color,total:ls.length,qual:ls.filter(l=>l.status==='Qualified'||l.status==='Won').length};
+  });
+  chart('chProject',{type:'bar',data:{labels:rows.map(r=>r.name),datasets:[
+    {label:'Qualified + won',data:rows.map(r=>r.qual),backgroundColor:rows.map(r=>r.color),borderRadius:6,barPercentage:.55},
+    {label:'Other leads',data:rows.map(r=>r.total-r.qual),backgroundColor:rows.map(r=>r.color+'55'),borderRadius:6,barPercentage:.55}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    scales:{x:{stacked:true,ticks:{color:th.text,font:{size:10}},grid:{display:false}},
+            y:{stacked:true,beginAtZero:true,ticks:{color:th.text,precision:0,font:{size:10}},grid:{color:th.grid}}},
+    plugins:{legend:{labels:{color:th.text,boxWidth:12,font:{size:11}}}}}});
+}
+
+function renderCPL(from,to){
+  const th=chartTheme();
+  const pj=$('fProject').value;
+  const rows=PAID.map(chn=>{
+    let spend=0;
+    db.campaigns.filter(c=>c.channel===chn&&(pj==='all'||c.projectId===pj))
+      .forEach(c=>{spend+=campaignSlice(c,from,to).spend});
+    const n=db.leads.filter(l=>l.source===chn&&(pj==='all'||l.projectId===pj)&&leadInRange(l,from,to)).length;
+    return{chn,cpl:n?spend/n:0,n};
+  }).filter(r=>r.cpl>0);
+  chart('chCPL',{type:'bar',data:{labels:rows.map(r=>r.chn),datasets:[{label:'CPL ($)',data:rows.map(r=>+r.cpl.toFixed(2)),
+    backgroundColor:['#4f46e5','#ec4899','#14b8a6','#f59e0b'],borderRadius:6,barPercentage:.5}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' $'+c.raw+' per lead ('+rows[c.dataIndex].n+' leads)'}}},
+      scales:{x:{beginAtZero:true,ticks:{color:th.text,font:{size:10},callback:v=>'$'+v},grid:{color:th.grid}},
+              y:{ticks:{color:th.text,font:{size:11}},grid:{display:false}}}}});
+}
+
+/* ---------- campaign table ---------- */
+function renderCampaignTable(from,to){
+  const rows=filteredCampaigns().map(c=>{
+    const s=campaignSlice(c,from,to);
+    const leads=db.leads.filter(l=>l.campaignId===c.id&&leadInRange(l,from,to)).length;
+    return{id:c.id,name:c.name,project:projName(c.projectId),pcolor:projColor(c.projectId),channel:c.channel,
+      impressions:s.impressions,clicks:s.clicks,ctr:s.impressions?s.clicks/s.impressions:0,
+      spend:s.spend,cpc:s.clicks?s.spend/s.clicks:0,leads,cpl:leads?s.spend/leads:0,
+      live:!c.end||new Date(c.end)>=new Date()};
+  }).filter(r=>r.impressions>0||r.spend>0||r.leads>0);
+  rows.sort((a,b)=>{const x=a[sortKey],y=b[sortKey];return(typeof x==='string'?x.localeCompare(y):x-y)*sortDir});
+  const tb=$('tblCampaigns').querySelector('tbody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="11"><div class="empty">No campaign activity in this range. Add one with “+ Add Campaign”.</div></td></tr>'}
+  else tb.innerHTML=rows.map(r=>`<tr>
+    <td><b>${esc(r.name)}</b> ${r.live?'<span class="pill" style="background:var(--green-soft);color:var(--green)">live</span>':''}</td>
+    <td><span class="proj-tag"><span class="k-dot" style="background:${r.pcolor}"></span>${esc(r.project)}</span></td>
+    <td>${esc(r.channel)}</td>
+    <td class="num">${fmt(r.impressions)}</td><td class="num">${fmt(r.clicks)}</td>
+    <td class="num">${pct(r.ctr)}</td><td class="num">${money(r.spend)}</td>
+    <td class="num">${r.cpc?money2(r.cpc):'—'}</td><td class="num">${r.leads}</td>
+    <td class="num"><b>${r.cpl?money2(r.cpl):'—'}</b></td>
+    <td><div class="row-actions"><button title="Edit" onclick="openCampaignModal('${r.id}')">✎</button><button title="Delete" onclick="delCampaign('${r.id}')">🗑</button></div></td>
+  </tr>`).join('');
+  $('campCount').textContent=rows.length+' campaign'+(rows.length===1?'':'s')+' with activity in range';
+  // sort indicators
+  $('tblCampaigns').querySelectorAll('th[data-k]').forEach(th=>{
+    th.querySelector('.arrow').textContent=th.dataset.k===sortKey?(sortDir===1?'▲':'▼'):'';
+  });
+}
+
+/* ---------- leads table ---------- */
+function renderLeadsTable(){
+  const{from,to}=rangeDates();
+  const q=($('leadSearch').value||'').toLowerCase();
+  let rows=filteredLeads(from,to).filter(l=>!q||(l.name+' '+l.email+' '+l.source+' '+projName(l.projectId)).toLowerCase().includes(q));
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+  const shown=rows.slice(0,leadsShown);
+  const tb=$('tblLeads').querySelector('tbody');
+  if(!shown.length){tb.innerHTML='<tr><td colspan="7"><div class="empty">No leads match. Add your first with “+ Add Lead”.</div></td></tr>'}
+  else tb.innerHTML=shown.map(l=>`<tr>
+    <td><b>${esc(l.name)}</b><div style="font-size:11px;color:var(--text3)">${esc(l.email)}</div></td>
+    <td><span class="proj-tag"><span class="k-dot" style="background:${projColor(l.projectId)}"></span>${esc(projName(l.projectId))}</span></td>
+    <td>${esc(l.source)}</td>
+    <td><select class="status-sel" style="color:${STATUS_COLORS[l.status]}" onchange="setStatus('${l.id}',this.value)">
+      ${STATUSES.map(s=>`<option ${s===l.status?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td class="num">${l.value?money(+l.value):'—'}</td>
+    <td style="white-space:nowrap">${new Date(l.date+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'2-digit'})}</td>
+    <td><div class="row-actions"><button title="Edit" onclick="openLeadModal('${l.id}')">✎</button><button title="Delete" onclick="delLead('${l.id}')">🗑</button></div></td>
+  </tr>`).join('');
+  $('leadCount').textContent='Showing '+shown.length+' of '+rows.length+' leads in range';
+  $('showMoreBtn').style.display=rows.length>leadsShown?'':'none';
+}
+
+function renderAll(){
+  renderFilters();
+  const{from,to,prevFrom,prevTo}=rangeDates();
+  const t=totals(from,to);
+  const hasPrev=!!from;
+  const tPrev=hasPrev?(()=>{  // compute previous-period totals with same project/channel filters
+    const saveRange={from,to};
+    const leads=filteredLeads(prevFrom,prevTo);
+    let impressions=0,clicks=0,spend=0;
+    filteredCampaigns().forEach(c=>{const s=campaignSlice(c,prevFrom,prevTo);impressions+=s.impressions;clicks+=s.clicks;spend+=s.spend});
+    const qualified=leads.filter(l=>l.status==='Qualified'||l.status==='Won').length;
+    const wonValue=leads.filter(l=>l.status==='Won').reduce((a,l)=>a+(+l.value||0),0);
+    return{leads:leads.length,qualified,wonValue,spend,clicks,impressions,
+      cpl:leads.length?spend/leads.length:NaN,convRate:leads.length?qualified/leads.length:NaN,
+      roi:spend>0?(wonValue-spend)/spend:NaN};
+  })():{};
+  $('compareNote').textContent=hasPrev?'Δ vs previous '+$('fRange').value+' days':'All-time view (no comparison)';
+  renderKPIs(t,tPrev,hasPrev);
+  renderTrend(t.leadList,from,to);
+  renderSource(t.leadList);
+  renderFunnel(t);
+  renderProjectChart(from,to);
+  renderCPL(from,to);
+  renderCampaignTable(from,to);
+  renderLeadsTable();
+  $('demoBadge').style.display=db.meta.demo?'inline-flex':'none';
+}
+
+/* ============================================================
+   MODALS & CRUD
+   ============================================================ */
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+
+function fillSelect(el,items,valKey,txtKey){el.innerHTML=items.map(i=>`<option value="${valKey?i[valKey]:i}">${esc(txtKey?i[txtKey]:i)}</option>`).join('')}
+
+function openLeadModal(id){
+  editLeadId=id||null;
+  $('mLeadTitle').textContent=id?'Edit lead':'Add lead';
+  fillSelect($('lProject'),db.projects,'id','name');
+  fillSelect($('lSource'),CHANNELS);
+  fillSelect($('lStatus'),STATUSES);
+  $('lCampaign').innerHTML='<option value="">— none —</option>'+db.campaigns.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(id){const l=db.leads.find(x=>x.id===id);
+    $('lName').value=l.name;$('lEmail').value=l.email;$('lProject').value=l.projectId;$('lSource').value=l.source;
+    $('lStatus').value=l.status;$('lValue').value=l.value||'';$('lDate').value=l.date;$('lCampaign').value=l.campaignId||'';$('lNotes').value=l.notes||'';
+  }else{
+    $('lName').value='';$('lEmail').value='';$('lValue').value='';$('lNotes').value='';$('lCampaign').value='';
+    $('lStatus').value='New';$('lDate').value=iso(new Date());
+  }
+  openModal('mLead');
+}
+function saveLead(){
+  const name=$('lName').value.trim();
+  if(!name){toast('Lead name is required');return}
+  const data={name,email:$('lEmail').value.trim(),projectId:$('lProject').value,source:$('lSource').value,
+    status:$('lStatus').value,value:+$('lValue').value||0,date:$('lDate').value||iso(new Date()),
+    campaignId:$('lCampaign').value,notes:$('lNotes').value.trim()};
+  if(editLeadId){Object.assign(db.leads.find(x=>x.id===editLeadId),data)}
+  else db.leads.push({id:uid(),...data});
+  save();closeModal('mLead');renderAll();toast(editLeadId?'Lead updated':'Lead added');
+}
+function setStatus(id,status){const l=db.leads.find(x=>x.id===id);if(l){l.status=status;save();renderAll()}}
+function delLead(id){if(!confirm('Delete this lead?'))return;db.leads=db.leads.filter(x=>x.id!==id);save();renderAll();toast('Lead deleted')}
+
+function openCampaignModal(id){
+  editCampId=id||null;
+  $('mCampTitle').textContent=id?'Edit campaign':'Add campaign';
+  fillSelect($('cProject'),db.projects,'id','name');
+  fillSelect($('cChannel'),CHANNELS);
+  if(id){const c=db.campaigns.find(x=>x.id===id);
+    $('cName').value=c.name;$('cProject').value=c.projectId;$('cChannel').value=c.channel;
+    $('cStart').value=c.start;$('cEnd').value=c.end||'';$('cImpr').value=c.impressions;$('cClicks').value=c.clicks;$('cSpend').value=c.spend;
+  }else{
+    $('cName').value='';$('cImpr').value='';$('cClicks').value='';$('cSpend').value='';
+    const d=new Date();d.setDate(d.getDate()-30);$('cStart').value=iso(d);$('cEnd').value='';
+  }
+  openModal('mCampaign');
+}
+function saveCampaign(){
+  const name=$('cName').value.trim();
+  if(!name){toast('Campaign name is required');return}
+  const data={name,projectId:$('cProject').value,channel:$('cChannel').value,
+    start:$('cStart').value||iso(new Date()),end:$('cEnd').value||'',
+    impressions:+$('cImpr').value||0,clicks:+$('cClicks').value||0,spend:+$('cSpend').value||0};
+  if(editCampId){Object.assign(db.campaigns.find(x=>x.id===editCampId),data)}
+  else db.campaigns.push({id:uid(),...data});
+  save();closeModal('mCampaign');renderAll();toast(editCampId?'Campaign updated':'Campaign added');
+}
+function delCampaign(id){
+  if(!confirm('Delete this campaign? Leads linked to it are kept.'))return;
+  db.campaigns=db.campaigns.filter(x=>x.id!==id);
+  db.leads.forEach(l=>{if(l.campaignId===id)l.campaignId=''});
+  save();renderAll();toast('Campaign deleted');
+}
+
+/* ---------- projects ---------- */
+function openProjects(){
+  selColor=PALETTE.find(c=>!db.projects.some(p=>p.color===c))||PALETTE[db.projects.length%PALETTE.length];
+  $('pColors').innerHTML=PALETTE.map(c=>`<div class="swatch ${c===selColor?'sel':''}" style="background:${c}" onclick="selColor='${c}';[...this.parentNode.children].forEach(s=>s.classList.remove('sel'));this.classList.add('sel')"></div>`).join('');
+  renderProjList();openModal('mProjects');
+}
+function renderProjList(){
+  $('projList').innerHTML=db.projects.map(p=>{
+    const n=db.leads.filter(l=>l.projectId===p.id).length;
+    return`<div class="proj-row"><span class="k-dot" style="width:12px;height:12px;border-radius:4px;background:${p.color}"></span>
+      <span class="name">${esc(p.name)}</span><span class="meta">${n} leads</span>
+      <button class="btn sm" onclick="renameProject('${p.id}')">Rename</button>
+      <button class="btn sm danger" onclick="delProject('${p.id}')">Delete</button></div>`;
+  }).join('')||'<div class="empty">No projects yet — add one below.</div>';
+}
+function addProject(){
+  const name=$('pName').value.trim();
+  if(!name){toast('Project name is required');return}
+  if(db.projects.some(p=>p.name.toLowerCase()===name.toLowerCase())){toast('That project already exists');return}
+  db.projects.push({id:uid(),name,color:selColor});
+  $('pName').value='';save();renderProjList();renderFilters();renderAll();toast('Project "'+name+'" added');
+}
+function renameProject(id){
+  const p=projById(id);const name=prompt('New name for "'+p.name+'":',p.name);
+  if(name&&name.trim()){p.name=name.trim();save();renderProjList();renderAll()}
+}
+function delProject(id){
+  const p=projById(id);
+  const n=db.leads.filter(l=>l.projectId===id).length;
+  if(!confirm('Delete "'+p.name+'"'+(n?' and its '+n+' leads + campaigns?':'?')))return;
+  db.projects=db.projects.filter(x=>x.id!==id);
+  db.leads=db.leads.filter(l=>l.projectId!==id);
+  db.campaigns=db.campaigns.filter(c=>c.projectId!==id);
+  save();renderProjList();renderAll();toast('Project deleted');
+}
+
+/* ============================================================
+   CSV / JSON import & export
+   ============================================================ */
+function openImport(){importType='leads';setSeg();openModal('mImport')}
+function openExport(){openModal('mExport')}
+function setSeg(){
+  $('segLeads').classList.toggle('on',importType==='leads');
+  $('segCamps').classList.toggle('on',importType==='campaigns');
+  $('importHint').textContent=importType==='leads'
+    ?'Columns: name, email, project, source, status, value, date (YYYY-MM-DD), campaign, notes'
+    :'Columns: name, project, channel, start, end, impressions, clicks, spend';
+}
+function csvEscape(v){v=String(v??'');return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function parseCSV(text){
+  const rows=[];let row=[],cell='',inQ=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(inQ){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++}else inQ=false}else cell+=ch}
+    else if(ch==='"')inQ=true;
+    else if(ch===','){row.push(cell);cell=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);cell='';if(row.some(c=>c!==''))rows.push(row);row=[]}
+    else cell+=ch}
+  if(cell!==''||row.length){row.push(cell);if(row.some(c=>c!==''))rows.push(row)}
+  return rows;
+}
+function ensureProject(name){
+  if(!name)return db.projects[0]?.id||'';
+  let p=db.projects.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!p){p={id:uid(),name,color:PALETTE[db.projects.length%PALETTE.length]};db.projects.push(p)}
+  return p.id;
+}
+function handleCSV(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const rows=parseCSV(e.target.result);
+      if(rows.length<2){toast('No data rows found');return}
+      const head=rows[0].map(h=>h.trim().toLowerCase());
+      const col=n=>head.indexOf(n);
+      let added=0;
+      if(importType==='leads'){
+        const ci={name:col('name'),email:col('email'),project:col('project'),source:col('source'),status:col('status'),value:col('value'),date:col('date'),campaign:col('campaign'),notes:col('notes')};
+        if(ci.name<0){toast('Missing required column: name');return}
+        rows.slice(1).forEach(r=>{
+          const src=ci.source>=0&&r[ci.source]?r[ci.source]:'Other';
+          const st=ci.status>=0&&STATUSES.includes(r[ci.status])?r[ci.status]:'New';
+          let campaignId='';
+          if(ci.campaign>=0&&r[ci.campaign]){const c=db.campaigns.find(x=>x.name.toLowerCase()===r[ci.campaign].toLowerCase());if(c)campaignId=c.id}
+          db.leads.push({id:uid(),name:r[ci.name]||'Unknown',email:ci.email>=0?r[ci.email]||'':'',
+            projectId:ensureProject(ci.project>=0?r[ci.project]:''),source:src,status:st,
+            value:ci.value>=0?+r[ci.value]||0:0,date:ci.date>=0&&/^\d{4}-\d{2}-\d{2}/.test(r[ci.date]||'')?r[ci.date].slice(0,10):iso(new Date()),
+            campaignId,notes:ci.notes>=0?r[ci.notes]||'':''});
+          added++;
+        });
+      }else{
+        const ci={name:col('name'),project:col('project'),channel:col('channel'),start:col('start'),end:col('end'),impressions:col('impressions'),clicks:col('clicks'),spend:col('spend')};
+        if(ci.name<0){toast('Missing required column: name');return}
+        rows.slice(1).forEach(r=>{
+          db.campaigns.push({id:uid(),name:r[ci.name]||'Unnamed',projectId:ensureProject(ci.project>=0?r[ci.project]:''),
+            channel:ci.channel>=0&&r[ci.channel]?r[ci.channel]:'Other',
+            start:ci.start>=0&&r[ci.start]?r[ci.start].slice(0,10):iso(new Date()),end:ci.end>=0?(r[ci.end]||'').slice(0,10):'',
+            impressions:ci.impressions>=0?+r[ci.impressions]||0:0,clicks:ci.clicks>=0?+r[ci.clicks]||0:0,spend:ci.spend>=0?+r[ci.spend]||0:0});
+          added++;
+        });
+      }
+      save();renderAll();closeModal('mImport');toast('Imported '+added+' '+importType);
+    }catch(err){toast('Import failed: '+err.message)}
+    input.value='';
+  };
+  reader.readAsText(f);
+}
+function download(name,content,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+function exportCSV(kind){
+  if(kind==='leads'){
+    const head='name,email,project,source,status,value,date,campaign,notes';
+    const lines=db.leads.map(l=>[l.name,l.email,projName(l.projectId),l.source,l.status,l.value,l.date,
+      (db.campaigns.find(c=>c.id===l.campaignId)||{}).name||'',l.notes].map(csvEscape).join(','));
+    download('leads.csv',[head,...lines].join('\n'),'text/csv');
+  }else{
+    const head='name,project,channel,start,end,impressions,clicks,spend';
+    const lines=db.campaigns.map(c=>[c.name,projName(c.projectId),c.channel,c.start,c.end,c.impressions,c.clicks,c.spend].map(csvEscape).join(','));
+    download('campaigns.csv',[head,...lines].join('\n'),'text/csv');
+  }
+  toast('Exported '+kind+'.csv');
+}
+function exportJSON(){download('leadgen-backup-'+iso(new Date())+'.json',JSON.stringify(db,null,2),'application/json');toast('Backup downloaded')}
+function restoreJSON(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{const data=JSON.parse(e.target.result);
+      if(!data.projects||!data.leads){toast('Not a valid backup file');return}
+      if(!confirm('Replace ALL current data with this backup?'))return;
+      db=data;save();renderAll();closeModal('mExport');toast('Backup restored');
+    }catch(err){toast('Restore failed: '+err.message)}
+    input.value='';
+  };
+  reader.readAsText(f);
+}
+
+/* ============================================================
+   THEME, SORT & INIT
+   ============================================================ */
+function toggleTheme(){
+  const cur=document.documentElement.dataset.theme==='dark'?'':'dark';
+  document.documentElement.dataset.theme=cur;
+  localStorage.setItem('leadgen_theme',cur);
+  $('themeBtn').textContent=cur==='dark'?'☀️':'🌙';
+  renderAll();
+}
+$('tblCampaigns').querySelectorAll('th[data-k]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1}
+    const{from,to}=rangeDates();renderCampaignTable(from,to);
+  });
+});
+(function init(){
+  const theme=localStorage.getItem('leadgen_theme')||'';
+  document.documentElement.dataset.theme=theme;
+  $('themeBtn').textContent=theme==='dark'?'☀️':'🌙';
+  load();
+  renderAll();
+})();
+
+/* ############################################################
+   V2 — PROSPECTING CRM (business search + review UI)
+   ############################################################ */
+const PIPELINE=['New','Audit Recorded','Audit Sent','Replied','Call Booked','Client','Dead'];
+const PRIORITY_COLORS={A:'#10b981',B:'#f59e0b',C:'#94a3b8'};
+const FRANCHISES=['roto-rooter','roto rooter','mr. rooter','mr rooter','benjamin franklin plumb','rescue rooter','ars rescue','angi','homeadvisor','home advisor','thumbtack','yelp','bbb','four seasons plumbing','american leak'];
+let searchResults=[],currentProspectId=null,orChannel='email',favOnly=false,logsShown=50;
+
+/* ---------- migration + sample prospect preload (all fictional) ---------- */
+/* These are fake, illustrative prospects so the dashboard isn't empty on first open.
+   Clear them any time with the "Load demo data / clear" control, or just delete rows here. */
+const SAMPLE_BATCH=[
+["Sample Plumbing Co","plumber","Anytown, USA","https://example.com/sample-plumbing","",4.6,120,"Sample Owner","owner@example.com","(555) 010-0101","email","plumber Anytown","Example only — appears mid-results for its main service term; homepage title is the address, not a service+location headline","FICTIONAL SAMPLE for demonstration. Replace with your own prospects.","https://example.com/sample-plumbing","Your homepage title shows your address instead of 'Anytown plumber' — a quick fix that helps searchers find you.",8,"A","New","Sample record — safe to delete"],
+["Demo HVAC Services","hvac","Anytown, USA","https://example.com/demo-hvac","",4.8,64,"","hello@example.com","(555) 010-0202","email","hvac repair Anytown","Example only — strong reviews but weak local search visibility","FICTIONAL SAMPLE for demonstration. Replace with your own prospects.","https://example.com/demo-hvac","4.8 stars and 60+ reviews, but you're below directories in search — a visibility tune-up puts you above them.",7,"A","New","Sample record — safe to delete"],
+["Example Roofing LLC","roofer","Anytown, USA","","",4.5,38,"","","(555) 010-0303","phone","roofer Anytown","Example only — no website; presence is directory listings only","FICTIONAL SAMPLE for demonstration. Replace with your own prospects.","","No website at all despite solid reviews — nowhere for a searcher to land or book.",6,"B","New","Sample record — safe to delete"],
+["Placeholder Landscaping","landscaper","Anytown, USA","https://example.com/placeholder-landscaping","",4.2,21,"","team@example.com","(555) 010-0404","contact form","landscaping Anytown","Example only — contact form is broken on the homepage","FICTIONAL SAMPLE for demonstration. Replace with your own prospects.","https://example.com/placeholder-landscaping","People find you, then hit a contact form that doesn't load — you're paying for the click and losing the lead.",5,"C","New","Sample record — safe to delete"]
+];
+function migrate(){
+  db.prospects=db.prospects||[];
+  db.savedSearches=db.savedSearches||[];
+  db.logs=db.logs||[];
+  db.settings=db.settings||{global:{placesKey:'',claudeKey:'',claudeModel:'claude-sonnet-5'},projects:{}};
+  const _g=db.settings.global;
+  _g.aiProvider=_g.aiProvider||'claude';
+  _g.openaiKey=_g.openaiKey||'';_g.openaiModel=_g.openaiModel||'gpt-5.6';
+  _g.openrouterKey=_g.openrouterKey||'';_g.openrouterModel=_g.openrouterModel||'anthropic/claude-sonnet-5';
+  // Ad & marketing channel connections (credentials stored locally only)
+  db.settings.connections=db.settings.connections||{};
+  if(!db.meta.v2){
+    const proj=db.projects[0];
+    if(proj){
+      SAMPLE_BATCH.forEach(r=>{
+        db.prospects.push({id:uid(),dateAdded:iso(new Date()),name:r[0],vertical:r[1],city:r[2],website:r[3],gUrl:r[4],
+          rating:r[5]===''?null:+r[5],reviews:r[6]===''?null:+r[6],contactName:r[7],email:r[8],phone:r[9],path:r[10],
+          query:r[11],obs:r[12],gap:r[13],evidence:r[14],angle:r[15],score:r[16],priority:r[17],status:r[18],notes:r[19],
+          projectId:proj.id,fav:false,x:'',ig:'',li:'',scoreParts:null});
+      });
+      log('csv_import','Sample prospects','Preloaded fictional sample prospects — delete or replace with your own');
+    }
+    db.meta.v2=true;save();
+  }
+}
+function log(type,subject,detail,prospectId){
+  db.logs.unshift({id:uid(),ts:new Date().toISOString(),type,subject:subject||'',detail:detail||'',prospectId:prospectId||''});
+  if(db.logs.length>5000)db.logs.length=5000;
+  save();updateBadges();
+}
+function updateBadges(){
+  $('cntProspects').textContent=db.prospects.length;
+  $('cntLogs').textContent=db.logs.length;
+}
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  document.querySelectorAll('#tabNav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.toggle('on',p.id==='page-'+t));
+  if(t==='prospect'){renderProspectSelectors();renderSavedSearches();renderProspects()}
+  if(t==='pipeline')renderKanban();
+  if(t==='logs')renderLogs();
+  if(t==='settings')renderSettings();
+}
+
+/* ---------- selectors ---------- */
+function renderProspectSelectors(){
+  const opts='<option value="all">All projects</option>'+db.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  const just=db.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  ['pProjFilter','kbProjFilter'].forEach(id=>{const el=$(id);const v=el.value;el.innerHTML=opts;el.value=[...el.options].some(o=>o.value===v)?v:'all'});
+  ['psProject','prProject','setProject'].forEach(id=>{const el=$(id);const v=el.value;el.innerHTML=just;if([...el.options].some(o=>o.value===v))el.value=v});
+  const sf=$('pStatusFilter');if(sf.options.length<=1)sf.innerHTML='<option value="all">All statuses</option>'+PIPELINE.map(s=>`<option>${s}</option>`).join('');
+  const ps=$('prStatus');if(!ps.options.length)ps.innerHTML=PIPELINE.map(s=>`<option>${s}</option>`).join('');
+}
+
+/* ============================================================
+   SEARCH — Google Places (New) Text Search + criteria filters
+   ============================================================ */
+function isFranchise(name){const n=name.toLowerCase();return FRANCHISES.some(f=>n.includes(f))}
+function passesCriteria(b){
+  const minR=+$('crRating').value,minRev=+$('crMinRev').value,maxRev=+$('crMaxRev').value;
+  const web=$('crWebsite').value,noFr=$('crFranchise').value==='yes';
+  const excl=($('crExclude').value||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  if(minR&&(b.rating||0)<minR)return false;
+  if(minRev&&(b.reviews||0)<minRev)return false;
+  if(maxRev&&(b.reviews||0)>maxRev)return false;
+  if(web==='yes'&&!b.website)return false;
+  if(web==='no'&&b.website)return false;
+  if(noFr&&isFranchise(b.name))return false;
+  if(excl.some(x=>b.name.toLowerCase().includes(x)))return false;
+  return true;
+}
+function qualifyChips(b){
+  const c=[];
+  c.push(b.reviews>=15?['pass','15+ reviews ('+b.reviews+')']:['fail',(b.reviews??'?')+' reviews']);
+  c.push((b.rating||0)>=4?['pass',b.rating+'★']:['fail',(b.rating??'?')+'★']);
+  c.push(b.website?['pass','website']:['warn','no website — gap?']);
+  c.push((b.phone||b.website)?['pass','contactable']:['fail','no contact path']);
+  return c.map(([cls,txt])=>`<span class="chip ${cls}">${txt}</span>`).join(' ');
+}
+function isDupe(name,phone){
+  const n=(name||'').toLowerCase(),ph=(phone||'').replace(/\D/g,'');
+  return db.prospects.some(p=>p.name.toLowerCase()===n||(ph&&p.phone&&p.phone.replace(/\D/g,'')===ph));
+}
+async function runSearch(){
+  const q=$('psQuery').value.trim();
+  if(!q){toast('Type a search first — e.g. "plumbers in Austin, TX"');return}
+  const key=db.settings.global.placesKey;
+  log('search_run',q,'criteria: rating≥'+$('crRating').value+', reviews≥'+$('crMinRev').value+', website='+$('crWebsite').value);
+  if(!key){
+    $('psNote').innerHTML='⚠ No Google Places key in <b>Settings</b> — live search is off. You can still <b>Import CSV</b> from an earlier export, or add prospects manually from the Pipeline tab.';
+    renderResults([]);return;
+  }
+  $('psNote').textContent='Searching…';
+  try{
+    const res=await fetch('https://places.googleapis.com/v1/places:searchText',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Goog-Api-Key':key,
+        'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.websiteUri,places.nationalPhoneNumber,places.googleMapsUri,places.businessStatus'},
+      body:JSON.stringify({textQuery:q,pageSize:20})});
+    if(!res.ok){const t=await res.text();throw new Error('API '+res.status+': '+t.slice(0,140))}
+    const data=await res.json();
+    searchResults=(data.places||[]).map(p=>({
+      gid:p.id,name:p.displayName?.text||'Unknown',address:p.formattedAddress||'',rating:p.rating??null,
+      reviews:p.userRatingCount??null,website:p.websiteUri||'',phone:p.nationalPhoneNumber||'',gUrl:p.googleMapsUri||'',
+      open:p.businessStatus==='OPERATIONAL'}));
+    const shown=searchResults.filter(passesCriteria);
+    $('psNote').innerHTML=`<b>${shown.length}</b> of ${searchResults.length} results pass your criteria for “${esc(q)}” — review, then add the good ones. Verified live from Google Places.`;
+    renderResults(shown,q);
+  }catch(err){
+    $('psNote').innerHTML='❌ Search failed: '+esc(err.message)+' — check the key in Settings (Places API (New) must be enabled).';
+    renderResults([]);
+  }
+}
+function renderResults(list,q){
+  $('psResults').innerHTML=list.map((b,i)=>{
+    const dupe=isDupe(b.name,b.phone);
+    return`<div class="p-card">
+      <div class="p-top"><div>
+        <h4>${esc(b.name)} ${b.open?'':'<span class="chip warn">status unverified</span>'}</h4>
+        <div class="p-meta"><span>${esc(b.address)}</span>${b.phone?`<span>📞 ${esc(b.phone)}</span>`:''}${b.website?`<span>🔗 <a href="${esc(b.website)}" target="_blank" rel="noopener">site</a></span>`:''}${b.gUrl?`<span><a href="${esc(b.gUrl)}" target="_blank" rel="noopener">Google profile</a></span>`:''}</div>
+        <div style="margin-top:8px">${qualifyChips(b)}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        ${dupe?'<span class="chip info">already in prospects</span>':`<button class="btn primary sm" onclick="addFromSearch(${i},'${esc(q||'').replace(/'/g,"\\'")}')">+ Add prospect</button>`}
+      </div></div></div>`;
+  }).join('')||'';
+  window._lastShown=list;
+}
+function addFromSearch(i,q){
+  const b=window._lastShown[i];if(!b)return;
+  if(isDupe(b.name,b.phone)){toast('Already in your prospect list');return}
+  // auto-score what the rubric allows from Places data
+  const revFit=(b.reviews>=15&&b.reviews<=100&&b.rating>=4&&b.rating<=4.7)?2:((b.reviews>100||b.rating>=4.8)?1:0);
+  const pathQ=b.website?2:(b.phone?1:0);
+  const p={id:uid(),dateAdded:iso(new Date()),name:b.name,vertical:(q||'').split(' in ')[0]||'',city:(q||'').split(' in ')[1]||b.address,
+    website:b.website,gUrl:b.gUrl,rating:b.rating,reviews:b.reviews,contactName:'',email:'',phone:b.phone,
+    path:b.website?'contact form':(b.phone?'phone':''),query:q||$('psQuery').value,obs:'Found via Places search on '+iso(new Date())+' — verified rating/review count from Google',
+    gap:'',evidence:b.gUrl||b.website,angle:'',score:revFit+pathQ,priority:'C',status:'New',notes:'Gap severity & independence not yet assessed — open the record to finish scoring',
+    projectId:$('psProject').value||db.projects[0]?.id,fav:false,x:'',ig:'',li:'',scoreParts:{gap:0,path:pathQ,rev:revFit,ind:0}};
+  db.prospects.unshift(p);save();
+  log('prospect_added',p.name,'from live search “'+(q||$('psQuery').value)+'” — auto-scored '+p.score+'/10 (finish gap + independence manually)',p.id);
+  renderResults(window._lastShown.filter((_,j)=>j!==i),q);renderProspects();updateBadges();
+  toast(p.name+' added — open it to record the visibility gap');
+}
+
+/* ---------- saved searches ---------- */
+function saveSearch(){
+  const q=$('psQuery').value.trim();if(!q){toast('Nothing to save');return}
+  db.savedSearches.push({id:uid(),query:q,projectId:$('psProject').value,
+    criteria:{rating:$('crRating').value,minRev:$('crMinRev').value,maxRev:$('crMaxRev').value,website:$('crWebsite').value,franchise:$('crFranchise').value,exclude:$('crExclude').value}});
+  save();renderSavedSearches();log('search_saved',q,'');toast('Search saved');
+}
+function renderSavedSearches(){
+  $('savedSearches').innerHTML=db.savedSearches.map(s=>
+    `<button class="saved-chip" onclick="loadSearch('${s.id}')">🔁 ${esc(s.query)} <span class="x" onclick="event.stopPropagation();delSearch('${s.id}')">✕</span></button>`).join('');
+}
+function loadSearch(id){
+  const s=db.savedSearches.find(x=>x.id===id);if(!s)return;
+  $('psQuery').value=s.query;$('psProject').value=s.projectId;
+  $('crRating').value=s.criteria.rating;$('crMinRev').value=s.criteria.minRev;$('crMaxRev').value=s.criteria.maxRev;
+  $('crWebsite').value=s.criteria.website;$('crFranchise').value=s.criteria.franchise;$('crExclude').value=s.criteria.exclude;
+  runSearch();
+}
+function delSearch(id){db.savedSearches=db.savedSearches.filter(x=>x.id!==id);save();renderSavedSearches()}
+
+/* ============================================================
+   PROSPECT LIST + DETAIL
+   ============================================================ */
+function renderProspects(){
+  const q=($('pFilter').value||'').toLowerCase(),st=$('pStatusFilter').value,pj=$('pProjFilter').value;
+  let list=db.prospects.filter(p=>
+    (st==='all'||p.status===st)&&(pj==='all'||p.projectId===pj)&&(!favOnly||p.fav)&&
+    (!q||(p.name+' '+p.city+' '+p.gap+' '+p.query+' '+p.vertical).toLowerCase().includes(q)));
+  list.sort((a,b)=>(b.score||0)-(a.score||0));
+  $('prospectList').innerHTML=list.map(p=>{
+    const pc=PRIORITY_COLORS[p.priority]||PRIORITY_COLORS.C;
+    return`<div class="p-card">
+      <div class="p-top">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div class="score-badge" style="background:${pc}" title="Score ${p.score}/10 — Priority ${p.priority}">${p.score??'—'}</div>
+          <div>
+            <h4 style="cursor:pointer" onclick="openProspect('${p.id}')">${esc(p.name)} <span class="chip info">${esc(p.status)}</span></h4>
+            <div class="p-meta">
+              <span class="proj-tag"><span class="k-dot" style="background:${projColor(p.projectId)}"></span>${esc(projName(p.projectId))}</span>
+              <span>${esc(p.city||'')}</span>
+              ${p.rating?`<span>${p.rating}★ ${p.reviews?'('+p.reviews+')':''}</span>`:'<span class="chip warn">rating not verified</span>'}
+              ${p.email?`<span>✉ ${esc(p.email)}</span>`:''}${p.phone?`<span>📞 ${esc(p.phone)}</span>`:''}
+            </div>
+          </div>
+        </div>
+        <button class="fav-btn" onclick="toggleFav('${p.id}')" title="Favorite">${p.fav?'★':'☆'}</button>
+      </div>
+      ${p.gap?`<div class="p-gap"><b>Gap:</b> ${esc(p.gap)}</div>`:'<div class="p-gap" style="border-color:var(--red)"><b>No gap recorded yet</b> — open the record and name the spotted issue (required before outreach)</div>'}
+      ${p.angle?`<div class="p-angle">“${esc(p.angle)}”</div>`:''}
+      <div class="p-actions">
+        <button class="btn sm primary" onclick="openOutreach('${p.id}')">💬 Outreach</button>
+        <button class="btn sm" onclick="openProspect('${p.id}')">✎ Open record</button>
+        ${p.website?`<a class="btn sm" href="${esc(p.website)}" target="_blank" rel="noopener">Site ↗</a>`:''}
+        ${p.evidence?`<a class="btn sm" href="${esc(p.evidence)}" target="_blank" rel="noopener">Evidence ↗</a>`:''}
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty">No prospects match. Run a search above or import a prospect CSV.</div>';
+}
+function toggleFav(id){const p=db.prospects.find(x=>x.id===id);p.fav=!p.fav;save();
+  log(p.fav?'prospect_fav':'prospect_unfav',p.name,'',id);renderProspects()}
+
+function openProspect(id){
+  currentProspectId=id||null;
+  renderProspectSelectors();
+  $('mProsTitle').textContent=id?'Edit prospect':'Add prospect';
+  $('prDeleteBtn').style.display=id?'':'none';
+  const p=id?db.prospects.find(x=>x.id===id):null;
+  const g=k=>p?(p[k]??''):'';
+  $('prName').value=g('name');$('prVertical').value=g('vertical');$('prCity').value=g('city');
+  $('prWebsite').value=g('website');$('prGUrl').value=g('gUrl');$('prRating').value=g('rating');
+  $('prReviews').value=g('reviews');$('prContact').value=g('contactName');$('prEmail').value=g('email');
+  $('prPhone').value=g('phone');$('prPath').value=g('path')||'';$('prX').value=g('x');$('prIG').value=g('ig');$('prLI').value=g('li');
+  $('prStatus').value=g('status')||'New';$('prObs').value=g('obs');$('prGap').value=g('gap');
+  $('prEvidence').value=g('evidence');$('prQuery').value=g('query');$('prAngle').value=g('angle');$('prNotes').value=g('notes');
+  if(p&&p.projectId)$('prProject').value=p.projectId;
+  const sp=(p&&p.scoreParts)||{gap:0,path:0,rev:0,ind:0};
+  $('scGap').value=sp.gap;$('scPath').value=sp.path;$('scRev').value=sp.rev;$('scInd').value=sp.ind;
+  updateScoreCalc();openModal('mProspect');
+}
+function updateScoreCalc(){
+  const t=+$('scGap').value + +$('scPath').value + +$('scRev').value + +$('scInd').value;
+  $('scTotal').textContent=t;
+  $('scPriority').textContent=t>=7?'A (audit-ready)':t>=4?'B (backup pool)':'C (below bar)';
+}
+['scGap','scPath','scRev','scInd'].forEach(id=>$(id).addEventListener('change',updateScoreCalc));
+function saveProspect(){
+  const name=$('prName').value.trim();if(!name){toast('Business name required');return}
+  const scoreParts={gap:+$('scGap').value,path:+$('scPath').value,rev:+$('scRev').value,ind:+$('scInd').value};
+  const score=scoreParts.gap+scoreParts.path+scoreParts.rev+scoreParts.ind;
+  const data={name,vertical:$('prVertical').value.trim(),city:$('prCity').value.trim(),website:$('prWebsite').value.trim(),
+    gUrl:$('prGUrl').value.trim(),rating:$('prRating').value?+$('prRating').value:null,reviews:$('prReviews').value?+$('prReviews').value:null,
+    contactName:$('prContact').value.trim(),email:$('prEmail').value.trim(),phone:$('prPhone').value.trim(),path:$('prPath').value,
+    x:$('prX').value.trim(),ig:$('prIG').value.trim(),li:$('prLI').value.trim(),status:$('prStatus').value,
+    obs:$('prObs').value.trim(),gap:$('prGap').value.trim(),evidence:$('prEvidence').value.trim(),query:$('prQuery').value.trim(),
+    angle:$('prAngle').value.trim(),notes:$('prNotes').value.trim(),projectId:$('prProject').value,
+    score,priority:score>=7?'A':score>=4?'B':'C',scoreParts};
+  if(currentProspectId){
+    const p=db.prospects.find(x=>x.id===currentProspectId);
+    const oldStatus=p.status;Object.assign(p,data);
+    if(oldStatus!==data.status)log('status_change',p.name,oldStatus+' → '+data.status,p.id);
+    else log('prospect_updated',p.name,'score '+score+'/10',p.id);
+  }else{
+    const p={id:uid(),dateAdded:iso(new Date()),fav:false,...data};
+    db.prospects.unshift(p);log('prospect_added',p.name,'manual entry — score '+score+'/10',p.id);
+  }
+  save();closeModal('mProspect');renderProspects();renderKanban();updateBadges();toast('Prospect saved');
+}
+function deleteProspect(){
+  if(!currentProspectId)return;
+  const p=db.prospects.find(x=>x.id===currentProspectId);
+  if(!confirm('Delete "'+p.name+'"? The activity log keeps its history.'))return;
+  db.prospects=db.prospects.filter(x=>x.id!==currentProspectId);
+  save();log('prospect_deleted',p.name,'',currentProspectId);
+  closeModal('mProspect');renderProspects();renderKanban();updateBadges();toast('Prospect deleted');
+}
+function convertToLead(){
+  if(!currentProspectId){toast('Save the prospect first');return}
+  const p=db.prospects.find(x=>x.id===currentProspectId);
+  db.leads.push({id:uid(),name:p.name,email:p.email,projectId:p.projectId,source:'Cold Outreach',
+    status:'Qualified',value:0,date:iso(new Date()),campaignId:'',notes:'From prospecting. Gap: '+p.gap});
+  save();log('lead_converted',p.name,'prospect → dashboard lead (Qualified)',p.id);
+  toast(p.name+' added to Dashboard leads');closeModal('mProspect');renderAll();
+}
+
+/* ============================================================
+   OUTREACH — templates, Claude AI, deep-link sending
+   ============================================================ */
+const CHANNEL_META={
+  email:{label:'Email',subject:true,action:'Open email draft ↗'},
+  x:{label:'X DM',subject:false,action:'Open X profile ↗'},
+  linkedin:{label:'LinkedIn DM',subject:false,action:'Open LinkedIn ↗'},
+  instagram:{label:'IG DM',subject:false,action:'Open Instagram ↗'},
+  phone:{label:'Call script',subject:false,action:'Call ↗'},
+  video:{label:'Video (Loom) script',subject:false,action:'Copy script'}
+};
+function projSettings(pid){return db.settings.projects[pid]||{}}
+function openOutreach(id){
+  currentProspectId=id;
+  const p=db.prospects.find(x=>x.id===id);
+  $('orName').textContent=p.name;
+  $('orGap').innerHTML=p.gap?'<b>Spotted issue:</b> '+esc(p.gap):'⚠ No visibility gap recorded — drafts will be generic. Open the record and add the gap first for a sharp pitch.';
+  setChannel(p.email?'email':(p.phone?'phone':'email'));
+  openModal('mOutreach');
+}
+function setChannel(ch){
+  orChannel=ch;
+  document.querySelectorAll('.channel-grid button').forEach(b=>b.classList.toggle('on',b.dataset.ch===ch));
+  $('orSubjWrap').style.display=CHANNEL_META[ch].subject?'':'none';
+  $('orSendBtn').textContent=CHANNEL_META[ch].action;
+  const _ai=aiCfg();
+  $('aiBtn').disabled=!_ai.key;
+  $('aiBtn').textContent='✨ AI draft ('+_ai.label+')';
+  $('orNote').textContent=_ai.key?('AI drafts use '+_ai.label+' ('+_ai.model+') directly from this browser.'):('No '+_ai.label+' key in Settings — ✨ AI draft is disabled; template drafts still work.');
+  generateDraft(false,true);
+}
+function templateDraft(p,ch){
+  const s=projSettings(p.projectId);
+  const sender=s.sender||'the sender';
+  const booking=s.booking||'';
+  const gap=p.gap||'a visibility issue I spotted on your online presence';
+  const angle=p.angle||('I found something specific costing '+p.name+' customers online.');
+  const proof=p.rating?`You've earned a ${p.rating}★ reputation${p.reviews?' across '+p.reviews+' reviews':''} — the work is clearly good.`:`Your reputation with customers is clearly solid.`;
+  const cta=booking?`If you want the 4-minute walkthrough: ${booking}`:`Reply and I'll send over a short video showing exactly what I found — free, no strings.`;
+  const first=(p.contactName||'').split(' ')[0];
+  const hi=first?`Hi ${first},`:`Hi — reaching out to whoever handles marketing at ${p.name},`;
+  switch(ch){
+    case 'email':return{subject:`Quick find: ${gap.length>60?'an issue costing '+p.name+' customers':gap}`,
+      body:`${hi}\n\n${angle}\n\nHere's what I noticed: ${gap}.\n\n${proof} The problem isn't the service — it's what people find (or don't find) when they search.\n\nI recorded what I saw${p.evidence?' (happy to share the link)':''} and how to fix it. ${cta}\n\n— ${sender}`};
+    case 'x':return{subject:'',body:`${hi.replace('Hi ','Hey ')} ${angle} Spotted: ${gap}. Made a quick video showing the fix — want me to send it over? — ${sender}`};
+    case 'linkedin':return{subject:'',body:`${hi}\n\n${angle}\n\nSpecifically: ${gap}.\n\n${proof} Happy to share a short video walkthrough of what I found and the fix — no pitch, just the findings. Worth a look?\n\n— ${sender}`};
+    case 'instagram':return{subject:'',body:`${hi.replace('Hi ','Hey ')} 👋 ${angle} What I spotted: ${gap}. I put together a quick video showing the fix — can I DM it over? — ${sender}`};
+    case 'phone':return{subject:'',body:`CALL SCRIPT — ${p.name} (${p.phone||'no number'})\n\nOPENER: "Hi, this is ${sender} — do you have 40 seconds? I'm not selling anything on this call, I just found something online that's costing you customers and figured you'd want to know."\n\nTHE FIND: "${gap}."\n\nPROOF: "${proof.replace(/—/g,'-')}"\n\nASK: "I recorded a short video showing exactly what I found and the fix. What's the best email to send it to?"\n\nOBJECTION — 'not interested': "Totally fine — it's free and takes 4 minutes to watch. If it's useless, delete it. What's the best email?"\n\nGOAL: get the email, log it, send audit same day.`};
+    case 'video':return{subject:'',body:`LOOM SCRIPT — Visibility Audit for ${p.name} (target: 3–4 min)\n\n[0:00 HOOK — screen on their Google result/site]\n"${p.angle||'Here\'s what someone in your area sees when they search for your service — and why they\'re not calling you.'}"\n\n[0:30 THE GAP]\nShow it live: ${gap}. ${p.evidence?'Evidence: '+p.evidence:''}\n\n[1:30 WHY IT MATTERS]\n${proof} But searchers can't see that — the gap sits between your reputation and your visibility.\n\n[2:30 THE FIX]\nWalk through the 2–3 concrete changes. Keep it doable — they should feel "oh, that's fixable."\n\n[3:30 CTA]\n"If you want help doing this, book 15 minutes${(projSettings(p.projectId).booking)?' — link below':''}. If you'd rather do it yourself, everything you need is in this video."`};
+  }
+}
+async function generateDraft(useAI,silent){
+  const p=db.prospects.find(x=>x.id===currentProspectId);if(!p)return;
+  if(!useAI){
+    const d=templateDraft(p,orChannel);
+    $('orSubject').value=d.subject;$('orDraft').value=d.body;
+    if(!silent){log('draft_generated',p.name,CHANNEL_META[orChannel].label+' (template)',p.id);toast('Template draft ready — edit before sending')}
+    return;
+  }
+  if(!aiCfg().key){toast('Add a '+aiCfg().label+' API key in Settings first');return}
+  $('orDraft').value='✨ Writing…';
+  const s=projSettings(p.projectId);
+  const prompt=`You write cold outreach for ${s.sender||'the sender'}, who sells local-visibility audits to small businesses. Write a ${CHANNEL_META[orChannel].label} to ${p.name} (${p.vertical||'local business'} in ${p.city||'their area'}).
+Their spotted issue: ${p.gap||'unknown'}
+Opening angle: ${p.angle||'none'}
+Their rating: ${p.rating||'unverified'} stars, ${p.reviews||'unverified'} reviews. Contact: ${p.contactName||'unknown'}.
+${s.booking?'Booking link to include: '+s.booking:''}
+Rules: lead with THEIR specific issue, not us. No hype words. Short sentences. ${orChannel==='email'?'Subject line first on its own line starting "SUBJECT:". Max 130 words.':orChannel==='x'||orChannel==='instagram'?'Max 60 words, casual.':orChannel==='phone'?'Format as a call script with OPENER/FIND/ASK/OBJECTION sections.':orChannel==='video'?'Format as a timestamped 3-4 minute Loom script.':'Max 100 words, professional but human.'}
+Offer: a free short video audit showing the fix. Never invent facts not given above.`;
+  try{
+    let text=await callAI(prompt,900);
+    if(orChannel==='email'){
+      const m=text.match(/^SUBJECT:\s*(.+)\n+/i);
+      if(m){$('orSubject').value=m[1].trim();text=text.slice(m[0].length)}
+    }
+    $('orDraft').value=text;
+    log('draft_generated',p.name,CHANNEL_META[orChannel].label+' (AI)',p.id);
+    toast('AI draft ready — read it before sending');
+  }catch(err){
+    $('orDraft').value='';toast('AI draft failed: '+err.message);
+    const d=templateDraft(p,orChannel);$('orSubject').value=d.subject;$('orDraft').value=d.body;
+  }
+}
+function copyDraft(){
+  const p=db.prospects.find(x=>x.id===currentProspectId);
+  navigator.clipboard.writeText(($('orSubjWrap').style.display!=='none'&&$('orSubject').value?('Subject: '+$('orSubject').value+'\n\n'):'')+$('orDraft').value)
+    .then(()=>{toast('Copied to clipboard');log('draft_copied',p.name,CHANNEL_META[orChannel].label,p.id)});
+}
+function openChannel(){
+  const p=db.prospects.find(x=>x.id===currentProspectId);if(!p)return;
+  const draft=$('orDraft').value;
+  let url='',how='';
+  if(orChannel==='email'){
+    if(!p.email){toast('No email on file — add one in the record, or use another channel');return}
+    url='mailto:'+encodeURIComponent(p.email)+'?subject='+encodeURIComponent($('orSubject').value)+'&body='+encodeURIComponent(draft);how='mailto';
+  }else if(orChannel==='x'){
+    navigator.clipboard.writeText(draft);
+    url=p.x?('https://x.com/'+encodeURIComponent(p.x.replace('@',''))):('https://x.com/search?q='+encodeURIComponent(p.name));how=p.x?'profile':'search';
+  }else if(orChannel==='linkedin'){
+    navigator.clipboard.writeText(draft);
+    url=p.li?(p.li.startsWith('http')?p.li:'https://'+p.li):('https://www.linkedin.com/search/results/all/?keywords='+encodeURIComponent(p.name));how=p.li?'profile':'search';
+  }else if(orChannel==='instagram'){
+    navigator.clipboard.writeText(draft);
+    url=p.ig?('https://www.instagram.com/'+encodeURIComponent(p.ig.replace('@','')+'/')):('https://www.google.com/search?q='+encodeURIComponent('site:instagram.com '+p.name));how=p.ig?'profile':'search';
+  }else if(orChannel==='phone'){
+    if(!p.phone){toast('No phone on file');return}
+    url='tel:'+p.phone.replace(/[^\d+]/g,'');how='tel';
+  }else{copyDraft();toast('Script copied — record your Loom, then log it by moving status to Audit Recorded');return}
+  log('channel_opened',p.name,CHANNEL_META[orChannel].label+' via '+how+(orChannel!=='email'&&orChannel!=='phone'?' (draft copied to clipboard — paste in DM)':''),p.id);
+  window.open(url,orChannel==='email'||orChannel==='phone'?'_self':'_blank');
+  toast(orChannel==='email'?'Email draft opened in your mail app':orChannel==='phone'?'Dialing…':'Opened — draft is in your clipboard, paste it in the DM');
+}
+
+/* ============================================================
+   PIPELINE KANBAN
+   ============================================================ */
+function renderKanban(){
+  const pj=$('kbProjFilter').value||'all';
+  $('kanban').innerHTML=PIPELINE.map(stage=>{
+    const cards=db.prospects.filter(p=>p.status===stage&&(pj==='all'||p.projectId===pj));
+    return`<div class="kb-col"><h5>${stage} <span>${cards.length}</span></h5>${cards.map(p=>{
+      const i=PIPELINE.indexOf(stage);
+      return`<div class="kb-card" onclick="openProspect('${p.id}')">
+        <b>${esc(p.name)}</b>
+        <span class="m"><span class="k-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${projColor(p.projectId)}"></span> ${esc(projName(p.projectId))} · ${p.score??'—'}/10</span>
+        <div class="kb-move" onclick="event.stopPropagation()">
+          ${i>0?`<button onclick="moveStage('${p.id}',-1)">◀</button>`:''}
+          ${i<PIPELINE.length-1?`<button onclick="moveStage('${p.id}',1)">▶</button>`:''}
+        </div></div>`;
+    }).join('')||'<div style="font-size:11px;color:var(--text3);text-align:center;padding:8px">—</div>'}</div>`;
+  }).join('');
+}
+function moveStage(id,dir){
+  const p=db.prospects.find(x=>x.id===id);
+  const i=PIPELINE.indexOf(p.status)+dir;
+  if(i<0||i>=PIPELINE.length)return;
+  const old=p.status;p.status=PIPELINE[i];save();
+  log('status_change',p.name,old+' → '+p.status,id);
+  renderKanban();renderProspects();
+}
+
+/* ============================================================
+   LOGS
+   ============================================================ */
+function renderLogs(){
+  const q=($('logSearch').value||'').toLowerCase(),ty=$('logType').value;
+  // build type filter options once from data
+  const types=[...new Set(db.logs.map(l=>l.type))].sort();
+  const sel=$('logType');
+  if(sel.options.length-1!==types.length){const v=sel.value;
+    sel.innerHTML='<option value="all">All types</option>'+types.map(t=>`<option>${t}</option>`).join('');
+    sel.value=[...sel.options].some(o=>o.value===v)?v:'all'}
+  let list=db.logs.filter(l=>(ty==='all'||l.type===ty)&&(!q||(l.subject+' '+l.detail+' '+l.type).toLowerCase().includes(q)));
+  const shown=list.slice(0,logsShown);
+  $('tblLogs').querySelector('tbody').innerHTML=shown.map(l=>`<tr>
+    <td style="white-space:nowrap">${new Date(l.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+    <td><span class="log-type">${esc(l.type)}</span></td>
+    <td><b>${esc(l.subject)}</b></td><td style="color:var(--text2)">${esc(l.detail)}</td></tr>`).join('')
+    ||'<tr><td colspan="4"><div class="empty">No activity yet.</div></td></tr>';
+  $('logCount').textContent='Showing '+shown.length+' of '+list.length+' entries';
+  $('logMoreBtn').style.display=list.length>logsShown?'':'none';
+}
+function exportLogs(){
+  const head='timestamp,type,subject,detail';
+  const lines=db.logs.map(l=>[l.ts,l.type,l.subject,l.detail].map(csvEscape).join(','));
+  download('activity-log.csv',[head,...lines].join('\n'),'text/csv');
+  log('csv_export','activity log',db.logs.length+' entries');
+}
+
+/* ============================================================
+   PROSPECT CSV (fixed column order)
+   ============================================================ */
+const CSV_HEAD=['Date Added','Business Name','Vertical','City/Borough','Website','Google Profile URL','Rating','Review Count','Contact Name','Email','Phone','Best Contact Path','Search Query','Local Visibility Observation','Visibility Gap','Evidence URL','Audit Angle','Score','Priority','Status','Notes'];
+function openProspectImport(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv';
+  inp.onchange=()=>{
+    const f=inp.files[0];if(!f)return;
+    const rd=new FileReader();
+    rd.onload=e=>{
+      try{
+        const rows=parseCSV(e.target.result);
+        const head=rows[0].map(h=>h.trim().toLowerCase());
+        const idx=n=>head.indexOf(n.toLowerCase());
+        const ci=CSV_HEAD.map(h=>idx(h));
+        if(ci[1]<0){toast('Not a valid prospect CSV (missing "Business Name")');return}
+        let added=0,skipped=0;
+        rows.slice(1).forEach(r=>{
+          const g=i=>ci[i]>=0?(r[ci[i]]||'').trim():'';
+          if(!g(1))return;
+          if(isDupe(g(1),g(10))){skipped++;return}
+          db.prospects.unshift({id:uid(),dateAdded:g(0)||iso(new Date()),name:g(1),vertical:g(2),city:g(3),website:g(4),gUrl:g(5),
+            rating:g(6)?+g(6):null,reviews:g(7)?+g(7):null,contactName:g(8),email:g(9),phone:g(10),path:g(11),query:g(12),
+            obs:g(13),gap:g(14),evidence:g(15),angle:g(16),score:g(17)?+g(17):null,
+            priority:g(18)||'C',status:PIPELINE.includes(g(19))?g(19):'New',notes:g(20),
+            projectId:$('psProject').value||db.projects[0]?.id,fav:false,x:'',ig:'',li:'',scoreParts:null});
+          added++;
+        });
+        save();renderProspects();updateBadges();
+        log('csv_import',f.name,added+' prospects imported, '+skipped+' duplicates skipped');
+        toast('Imported '+added+' prospects ('+skipped+' dupes skipped)');
+      }catch(err){toast('Import failed: '+err.message)}
+    };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
+function exportProspects(){
+  const lines=db.prospects.map(p=>[p.dateAdded,p.name,p.vertical,p.city,p.website,p.gUrl,p.rating??'',p.reviews??'',
+    p.contactName,p.email,p.phone,p.path,p.query,p.obs,p.gap,p.evidence,p.angle,p.score??'',p.priority,p.status,p.notes]
+    .map(csvEscape).join(','));
+  download('prospects.csv',[CSV_HEAD.join(','),...lines].join('\n'),'text/csv');
+  log('csv_export','prospects',db.prospects.length+' rows');toast('prospects.csv downloaded');
+}
+
+/* ============================================================
+   AI PROVIDERS — unified engine (Claude / OpenAI / OpenRouter)
+   ============================================================ */
+const AI_PROVIDERS={
+  claude:{label:'Claude',keyField:'claudeKey',modelField:'claudeModel',defModel:'claude-sonnet-5'},
+  openai:{label:'OpenAI',keyField:'openaiKey',modelField:'openaiModel',defModel:'gpt-5.6'},
+  openrouter:{label:'OpenRouter',keyField:'openrouterKey',modelField:'openrouterModel',defModel:'anthropic/claude-sonnet-5'}
+};
+function aiCfg(prov){
+  const g=db.settings.global;
+  const p=prov||g.aiProvider||'claude';
+  const meta=AI_PROVIDERS[p]||AI_PROVIDERS.claude;
+  return{provider:p,label:meta.label,key:(g[meta.keyField]||'').trim(),model:(g[meta.modelField]||'').trim()||meta.defModel};
+}
+async function callAI(prompt,maxTokens,provOverride){
+  const c=aiCfg(provOverride);
+  if(!c.key)throw new Error('No '+c.label+' API key in Settings');
+  let url,headers,body;
+  if(c.provider==='claude'){
+    url='https://api.anthropic.com/v1/messages';
+    headers={'x-api-key':c.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'};
+    body={model:c.model,max_tokens:maxTokens,messages:[{role:'user',content:prompt}]};
+  }else{
+    url=c.provider==='openai'?'https://api.openai.com/v1/chat/completions':'https://openrouter.ai/api/v1/chat/completions';
+    headers={'authorization':'Bearer '+c.key,'content-type':'application/json'};
+    if(c.provider==='openrouter'){headers['HTTP-Referer']='https://lead-gen-dashboard.local';headers['X-Title']='Lead Gen Dashboard'}
+    body={model:c.model,messages:[{role:'user',content:prompt}]};
+    if(c.provider==='openai')body.max_completion_tokens=maxTokens;else body.max_tokens=maxTokens;
+  }
+  const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||(c.label+' API '+res.status))}
+  const data=await res.json();
+  if(c.provider==='claude')return(data.content||[]).map(x=>x.text||'').join('').trim();
+  return(data.choices?.[0]?.message?.content||'').trim();
+}
+async function testConnection(prov){
+  const out=$('testResult');
+  // pull unsaved values from the inputs so you can test before saving
+  const g=db.settings.global;
+  const snap={placesKey:g.placesKey,claudeKey:g.claudeKey,claudeModel:g.claudeModel,openaiKey:g.openaiKey,openaiModel:g.openaiModel,openrouterKey:g.openrouterKey,openrouterModel:g.openrouterModel};
+  g.placesKey=$('setPlacesKey').value.trim();g.claudeKey=$('setClaudeKey').value.trim();g.claudeModel=$('setClaudeModel').value.trim();
+  g.openaiKey=$('setOpenaiKey').value.trim();g.openaiModel=$('setOpenaiModel').value.trim();
+  g.openrouterKey=$('setOpenrouterKey').value.trim();g.openrouterModel=$('setOpenrouterModel').value.trim();
+  out.textContent='⏳ Testing '+(prov==='places'?'Google Places':AI_PROVIDERS[prov].label)+'…';
+  try{
+    if(prov==='places'){
+      if(!g.placesKey)throw new Error('No Places key entered');
+      const res=await fetch('https://places.googleapis.com/v1/places:searchText',{method:'POST',
+        headers:{'content-type':'application/json','X-Goog-Api-Key':g.placesKey,'X-Goog-FieldMask':'places.id'},
+        body:JSON.stringify({textQuery:'coffee shop in Austin TX',maxResultCount:1})});
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||('HTTP '+res.status))}
+      out.textContent='✅ Google Places connected';
+    }else{
+      const c=aiCfg(prov);
+      const txt=await callAI('Reply with exactly: OK',20,prov);
+      out.textContent='✅ '+c.label+' connected ('+c.model+') — replied: '+txt.slice(0,40);
+    }
+    toast('Connection OK');
+  }catch(err){
+    out.textContent='❌ '+err.message;
+    toast('Test failed: '+err.message);
+  }finally{Object.assign(g,snap)}
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function togglePw(id){const el=$(id);el.type=el.type==='password'?'text':'password'}
+function renderSettings(){
+  renderProspectSelectors();
+  const g=db.settings.global;
+  $('setPlacesKey').value=g.placesKey||'';
+  $('setAiProvider').value=g.aiProvider||'claude';
+  $('setClaudeKey').value=g.claudeKey||'';
+  $('setClaudeModel').value=g.claudeModel||'claude-sonnet-5';
+  $('setOpenaiKey').value=g.openaiKey||'';
+  $('setOpenaiModel').value=g.openaiModel||'gpt-5.6';
+  $('setOpenrouterKey').value=g.openrouterKey||'';
+  $('setOpenrouterModel').value=g.openrouterModel||'anthropic/claude-sonnet-5';
+  renderConnections();
+  loadProjectSettings();
+}
+
+/* ---------- Ad & marketing channel connections ----------
+   Each channel stores one or more credential fields in db.settings.connections[key].
+   Add or remove channels by editing CONN_CHANNELS below. */
+const CONN_CHANNELS=[
+  {key:'google_ads',   label:'Google Ads',            group:'Advertising',
+   fields:[{k:'customerId',ph:'Customer ID (e.g. 123-456-7890)'},{k:'token',ph:'Developer / OAuth token',secret:true}],
+   hint:'Google Ads → API Center for the developer token; account is your Customer ID.'},
+  {key:'meta_ads',     label:'Meta Ads (Facebook / Instagram)', group:'Advertising',
+   fields:[{k:'accountId',ph:'Ad Account ID (act_…)'},{k:'token',ph:'Access token',secret:true}],
+   hint:'Meta Business → Business Settings → Ad Accounts; token from Graph API / a system user.'},
+  {key:'linkedin_ads', label:'LinkedIn Ads',           group:'Advertising',
+   fields:[{k:'accountId',ph:'Ad Account ID'},{k:'token',ph:'Access token',secret:true}],
+   hint:'LinkedIn Campaign Manager → account; token via LinkedIn Marketing API OAuth.'},
+  {key:'tiktok_ads',   label:'TikTok Ads',             group:'Advertising',
+   fields:[{k:'advertiserId',ph:'Advertiser ID'},{k:'token',ph:'Access token',secret:true}],
+   hint:'TikTok Ads Manager → Advertiser ID; token from TikTok for Business API.'},
+  {key:'ga4',          label:'Google Analytics 4',     group:'Analytics & CRM',
+   fields:[{k:'propertyId',ph:'Property ID (e.g. 123456789)'},{k:'measurementId',ph:'Measurement ID (G-XXXX)'}],
+   hint:'GA4 Admin → Property Settings for the Property ID; Data Streams for the Measurement ID.'},
+  {key:'mailchimp',    label:'Mailchimp / Klaviyo',    group:'Analytics & CRM',
+   fields:[{k:'apiKey',ph:'API key',secret:true}],
+   hint:'Mailchimp: Account → Extras → API keys. Klaviyo: Settings → API keys.'},
+  {key:'hubspot',      label:'HubSpot',                group:'Analytics & CRM',
+   fields:[{k:'token',ph:'Private app access token',secret:true}],
+   hint:'HubSpot → Settings → Integrations → Private Apps → create app for the token.'}
+];
+function connState(key){return (db.settings.connections&&db.settings.connections[key])||{}}
+function connConnected(key){const s=connState(key);return CONN_CHANNELS.find(c=>c.key===key).fields.some(f=>(s[f.k]||'').trim())}
+function renderConnections(){
+  const grid=$('connGrid');if(!grid)return;
+  db.settings.connections=db.settings.connections||{};
+  let lastGroup='';
+  grid.innerHTML=CONN_CHANNELS.map(ch=>{
+    const s=connState(ch.key), on=connConnected(ch.key);
+    const head=ch.group!==lastGroup?`<div class="form-field full" style="margin-bottom:-4px"><div class="sub" style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3)">${(lastGroup=ch.group)}</div></div>`:'';
+    const pill=`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;${on?'background:var(--green-soft);color:var(--green)':'background:var(--surface2);color:var(--text3)'}">${on?'● Connected':'○ Not connected'}</span>`;
+    const inputs=ch.fields.map(f=>{
+      const id='conn_'+ch.key+'_'+f.k, val=(s[f.k]||'').replace(/"/g,'&quot;');
+      return f.secret
+        ? `<div class="key-input"><input type="password" id="${id}" placeholder="${f.ph}" value="${val}"><button class="btn sm" type="button" onclick="togglePw('${id}')">👁</button></div>`
+        : `<input type="text" id="${id}" placeholder="${f.ph}" value="${val}" style="margin-bottom:6px">`;
+    }).join('');
+    return `${head}<div class="form-field full"><label style="display:flex;align-items:center;justify-content:space-between;gap:8px">${ch.label} ${pill}</label>${inputs}<div class="hint">${ch.hint}</div></div>`;
+  }).join('');
+}
+function saveConnections(){
+  db.settings.connections=db.settings.connections||{};
+  CONN_CHANNELS.forEach(ch=>{
+    const obj={};
+    ch.fields.forEach(f=>{const el=$('conn_'+ch.key+'_'+f.k);if(el)obj[f.k]=el.value.trim();});
+    db.settings.connections[ch.key]=obj;
+  });
+  save();
+  const live=CONN_CHANNELS.filter(c=>connConnected(c.key)).map(c=>c.label);
+  log('settings_updated','connections',live.length?('Connected: '+live.join(', ')):'connections cleared');
+  renderConnections();toast('Connections saved');
+}
+function clearConnections(){
+  if(!confirm('Clear all saved channel connections?'))return;
+  db.settings.connections={};save();renderConnections();
+  log('settings_updated','connections','all connections cleared');toast('Connections cleared');
+}
+/* LIVE FETCH STUB — wire real reporting pulls per channel here.
+   Example shape:
+   async function fetchChannelMetrics(key){
+     const cfg=connState(key);
+     // if(key==='meta_ads'){ return fetch(`https://graph.facebook.com/v20.0/${cfg.accountId}/insights?access_token=${cfg.token}`)... }
+     // NOTE: browser CORS + OAuth mean most ad APIs need a small server/proxy or the platform SDK.
+     return null;
+   } */
+function saveGlobalSettings(){
+  const g=db.settings.global;
+  g.placesKey=$('setPlacesKey').value.trim();
+  g.aiProvider=$('setAiProvider').value;
+  g.claudeKey=$('setClaudeKey').value.trim();
+  g.claudeModel=$('setClaudeModel').value.trim()||'claude-sonnet-5';
+  g.openaiKey=$('setOpenaiKey').value.trim();
+  g.openaiModel=$('setOpenaiModel').value.trim()||'gpt-5.6';
+  g.openrouterKey=$('setOpenrouterKey').value.trim();
+  g.openrouterModel=$('setOpenrouterModel').value.trim()||'anthropic/claude-sonnet-5';
+  save();log('settings_updated','global','API keys updated · AI provider: '+AI_PROVIDERS[g.aiProvider].label);toast('Global settings saved');
+}
+function loadProjectSettings(){
+  const s=projSettings($('setProject').value);
+  $('setML').value=s.ml||'';$('setSbUrl').value=s.sbUrl||'';$('setSbKey').value=s.sbKey||'';
+  $('setX').value=s.x||'';$('setIG').value=s.ig||'';$('setLI').value=s.li||'';$('setMeta').value=s.meta||'';
+  $('setSender').value=s.sender||'';$('setBooking').value=s.booking||'';
+}
+function saveProjectSettings(){
+  const pid=$('setProject').value;if(!pid){toast('Pick a project');return}
+  db.settings.projects[pid]={ml:$('setML').value.trim(),sbUrl:$('setSbUrl').value.trim(),sbKey:$('setSbKey').value.trim(),
+    x:$('setX').value.trim(),ig:$('setIG').value.trim(),li:$('setLI').value.trim(),meta:$('setMeta').value.trim(),
+    sender:$('setSender').value.trim(),booking:$('setBooking').value.trim()};
+  save();log('settings_updated',projName(pid),'project credentials updated');toast('Project credentials saved');
+}
+
+/* ---------- v2 init ---------- */
+const _renderAll=renderAll;
+renderAll=function(){_renderAll();renderProspectSelectors();updateBadges()};
+migrate();
+renderProspectSelectors();
+renderSavedSearches();
+renderProspects();
+updateBadges();
+
+/* ============================================================
+   v3 — CONTENT STUDIO
+   Brand profiles baked in from brands/<brand>/ 2026-07-12
+   ============================================================ */
+/* Sample brand voice profiles (generic placeholders).
+   Edit these in Settings → Brand voice, or replace the defaults below with your own brands. */
+const BRAND_KEYS=['my-brand','sample-newsletter','sample-local-agency','sample-app'];
+const BRAND_COLORS={'my-brand':'#8b5cf6','sample-newsletter':'#3b82f6','sample-local-agency':'#10b981','sample-app':'#f97316'};
+const BRAND_DEFAULTS={
+'my-brand':{short:'My Brand',name:'My Brand — your personal or company brand',
+ voice:`Describe your voice here: tone, sentence length, personality, and any signature phrases. Example: direct, honest, build-in-public. Short sentences. One idea per line. Conversational, like talking not publishing.`,
+ audience:`Describe who you're writing to: their role, what they care about, and the main objection you need to overcome.`,
+ offer:`Describe what you sell or promote, your main call-to-action, and any links (site, booking, signup).`,
+ cta:`List your go-to calls-to-action here.`,
+ avoid:`List words, tones, and clichés this brand should never use.`,
+ pillars:`List your content pillars and the rough mix, e.g. 1) Educational 2) Behind-the-scenes 3) Social proof 4) Direct offer.`},
+'sample-newsletter':{short:'Sample Newsletter',name:'Sample Newsletter — plain-English updates',
+ voice:`Plain English, grounded, calm, useful, beginner-friendly. Explains without showing off. Short paragraphs, clear structure. Clarity over sounding smart.`,
+ audience:`Curious beginners and busy professionals who want signal without noise. Pain: the topic is jargon-heavy and easy to feel behind on.`,
+ offer:`Free newsletter: a short, plain-English brief on your topic. Site: example.com · signup: example.com/newsletter.`,
+ cta:`Subscribe · read the full breakdown · explore the archive.`,
+ avoid:`hype launch language, jargon without explanation, corporate fluff, clickbait.`,
+ pillars:`1) Plain-English news 2) Explainers 3) Curated opportunities 4) Deep-dive breakdowns.`},
+'sample-local-agency':{short:'Local Agency',name:'Sample Local Agency — get found on Google & Maps',
+ voice:`Calm, direct, specific, low-pressure. A guide who looked at THIS business, not a closer working a list. Frame problems as missed opportunity, never failure.`,
+ audience:`Owner-operated local businesses that live on calls and bookings. Write to one person: the owner who answers their own phone. Pains: competitors outrank them, missed calls, burned by an agency before.`,
+ offer:`Free visibility audit (Google Business Profile check, Map Pack search, page-speed score, 3 prioritized fixes). Booking: example.com/book. Site: example.com.`,
+ cta:`One CTA per asset, always the free audit. Soft and concrete: "If any of this resonates, the audit is free. No pressure."`,
+ avoid:`urgency theater, discounts as chasing, "just checking in", agency jargon (synergy, full-funnel, holistic), hype adjectives (game-changing, 10x).`,
+ pillars:`1) Visibility teardowns of real gaps 2) AI-search visibility 3) DIY fixes an owner can do in 30 minutes 4) Build-in-public client journey.`},
+'sample-app':{short:'Sample App',name:'Sample App — a consumer product',
+ voice:`Friendly, lightly playful, benefit-first, concrete. Plain answers, no padding. Lead with the demo.`,
+ audience:`Everyday users of your product. Name their core pain and the moment your app solves it.`,
+ offer:`Free app with core features. No ads, no paywalls on the basics. Stage: describe launch status and where to get it.`,
+ cta:`Pre-launch: follow the build. Post-launch: download free.`,
+ avoid:`overpromising, subscription-pushy language, unverifiable claims.`,
+ pillars:`1) Product demos 2) Core workflow walkthroughs 3) Use-case highlights 4) Build-in-public updates.`}
+};
+const CS_GLOBAL_RULES=`Start with the audience's problem, desire, or context, not with the brand. One clear CTA per asset. Strong hook: name a specific problem, promise a useful outcome, challenge an assumption, show a surprising detail, or make the reader feel seen. Never invent claims, metrics, reviews, quotes, or facts. If source material is thin, stay general instead of fabricating. No generic filler. Match the channel format. When repurposing, keep the core message but change the format for the channel. Never use em dashes; use commas, periods, or shorter sentences instead.`;
+const CS_SKILLS={
+ xpost:{icon:'𝕏',label:'X Post',desc:'3 post options, hook-first'},
+ thread:{icon:'🧵',label:'X Thread',desc:'Takeaway-led 6-8 post thread'},
+ linkedin:{icon:'💼',label:'LinkedIn Post',desc:'Professional but human'},
+ blog:{icon:'📝',label:'Blog / Article',desc:'SEO blog or narrative article'},
+ email:{icon:'✉️',label:'Email Campaign',desc:'3 subject lines + body'},
+ pack:{icon:'📆',label:'Multi-Day Pack',desc:'2-7 days across platforms'},
+ repurpose:{icon:'♻️',label:'Repurpose',desc:'Link or pasted post → any format'},
+ journal:{icon:'📓',label:'From Journal',desc:'Turn an entry into content'},
+ freeform:{icon:'✨',label:'Open request',desc:'The system routes it'}
+};
+const CS_TYPES={xpost:['𝕏','X Post'],thread:['🧵','X Thread'],linkedin:['💼','LinkedIn'],blog:['📝','Blog'],article:['📰','Article'],email:['✉️','Email'],other:['✨','Other']};
+const CS_STATUS_STYLE={Draft:'background:var(--surface2);color:var(--text3)',Ready:'background:var(--amber-soft);color:var(--amber)',Posted:'background:var(--green-soft);color:var(--green)'};
+let csSkill='freeform',csLastAssets=[],cvId=null,jrEditId=null;
+
+function getBrandProfile(k){
+  const d=BRAND_DEFAULTS[k]||BRAND_DEFAULTS['my-brand'],o=(db.settings.brandProfiles||{})[k]||{};
+  return{short:d.short,name:d.name,voice:o.voice||d.voice,audience:o.audience||d.audience,offer:o.offer||d.offer,cta:o.cta||d.cta,avoid:o.avoid||d.avoid,pillars:o.pillars||d.pillars};
+}
+const brandShort=k=>(BRAND_DEFAULTS[k]||{}).short||k;
+
+function migrate3(){
+  db.journal=db.journal||[];db.content=db.content||[];
+  db.settings.brandProfiles=db.settings.brandProfiles||{};
+  if(!db.meta.v3){
+    if(!db.projects.some(p=>/my.?brand/i.test(p.name)))db.projects.push({id:uid(),name:'My Brand',color:'#8b5cf6'});
+    db.meta.v3=true;save();
+    log('settings_updated','Content Studio installed','Sample brand profiles added; My Brand added to projects');
+  }
+}
+
+/* ---------- tab render ---------- */
+function csBrandChanged(){db.settings.csBrand=$('csBrand').value;save()}
+function renderContentTab(){
+  const sel=$('csBrand');
+  if(!sel.options.length){
+    sel.innerHTML=BRAND_KEYS.map(k=>`<option value="${k}">${esc(brandShort(k))}</option>`).join('');
+    sel.value=BRAND_KEYS.includes(db.settings.csBrand)?db.settings.csBrand:'my-brand';
+  }
+  if(!$('csSkills').children.length)
+    $('csSkills').innerHTML=Object.entries(CS_SKILLS).filter(([k])=>k!=='freeform').map(([k,s])=>
+      `<div class="skill-card" onclick="openSkill('${k}')"><div class="ic">${s.icon}</div><b>${s.label}</b><div class="d">${s.desc}</div></div>`).join('');
+  $('csKeyNote').innerHTML=aiCfg().key?'':'⚠ No '+aiCfg().label+' API key in <b>Settings</b> — Content Studio needs it to write. Add it once and every skill here lights up.';
+  const lb=$('libBrand');
+  if(!lb.options.length){
+    lb.innerHTML='<option value="all">All brands</option>'+BRAND_KEYS.map(k=>`<option value="${k}">${esc(brandShort(k))}</option>`).join('');
+    $('libType').innerHTML='<option value="all">All types</option>'+Object.entries(CS_TYPES).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join('');
+  }
+  renderJournal();renderLibrary();
+}
+
+/* ---------- compose ---------- */
+function openSkill(k){
+  csSkill=k;
+  const s=CS_SKILLS[k];
+  $('csTitle').textContent=s.icon+' '+s.label;
+  $('csDesc').textContent={
+    xpost:'Three alternative standalone posts in the brand voice. Pick the best, or post all three across the week.',
+    thread:'One thread, strongest takeaway first, numbered posts, each under 280 characters.',
+    linkedin:'One LinkedIn post: the brand voice with the most casual slang dialed down.',
+    blog:'A full blog post with SEO headers, or a narrative article. Markdown output.',
+    email:'A campaign or newsletter email with 3 subject line options.',
+    pack:'A multi-day content pack: one asset per platform per day, each day a distinct angle.',
+    repurpose:'Paste a post or any source text and turn it into a new format. The link is saved as a reference.',
+    journal:'Turn a journal entry into content. Use the ✨ button on an entry to prefill, then pick the output type.',
+    freeform:'Describe anything. The system picks the best format(s) for your request.'
+  }[k]||'';
+  const cb=$('csCBrand');
+  if(!cb.options.length)cb.innerHTML=BRAND_KEYS.map(bk=>`<option value="${bk}">${esc(brandShort(bk))}</option>`).join('');
+  cb.value=$('csBrand').value||'my-brand';
+  csFillBrandFields();
+  $('csGoal').value=k==='freeform'?($('csAsk').value||''):'';
+  if(k!=='journal'||!$('csSource').value)$('csSource').value='';
+  $('csLink').value='';
+  $('csSrcLabel').textContent=k==='repurpose'?'Paste the post / source text here (required)':k==='journal'?'Journal entry text (use ✨ on an entry to prefill)':'Source material — journal text, notes, pasted post, transcript… (optional but sharper results)';
+  $('csResults').innerHTML='';$('csStatus').textContent='';
+  csToggleRows();
+  openModal('mCompose');
+}
+function csFillBrandFields(){
+  const b=getBrandProfile($('csCBrand').value);
+  $('csCtx').value='AUDIENCE: '+b.audience+'\nOFFER: '+b.offer+'\nCTA STYLE: '+b.cta;
+}
+function csToggleRows(){
+  const t=csSkill,ot=$('csOuttype').value;
+  const isPack=t==='pack'||((t==='repurpose'||t==='journal')&&ot==='pack');
+  $('csRowOuttype').style.display=(t==='repurpose'||t==='journal')?'':'none';
+  $('csRowDays').style.display=isPack?'':'none';
+  $('csRowPlatforms').style.display=isPack?'':'none';
+  $('csRowKind').style.display=t==='blog'?'':'none';
+  $('csRowLen').style.display=(!isPack&&(t==='blog'||((t==='repurpose'||t==='journal')&&(ot==='blog'||ot==='article'))))?'':'none';
+  $('csRowLink').style.display=t==='repurpose'?'':'none';
+}
+function csEffType(){
+  if(csSkill==='repurpose'||csSkill==='journal')return $('csOuttype').value;
+  if(csSkill==='blog')return $('csKind').value;
+  if(csSkill==='freeform')return 'auto';
+  return csSkill;
+}
+function csFmt(t){
+  const w=$('csLen').value||'800';
+  switch(t){
+    case 'xpost':return 'Write 3 alternative standalone X posts, each as its own ASSET block with TYPE: xpost. Each under 280 characters. Hook in the first line. Short lines. No hashtags unless they feel natural.';
+    case 'thread':return 'Write one X thread of 6 to 8 posts in a single ASSET block with TYPE: thread. Post 1 leads with the strongest takeaway. Number each post like 1/, 2/. Every post under 280 characters. End with a simple engagement CTA.';
+    case 'linkedin':return 'Write 1 LinkedIn post as TYPE: linkedin. 120 to 220 words. Line breaks between short paragraphs. Hook in the first 2 lines (before the fold). Keep the brand voice but drop the most casual slang. One CTA.';
+    case 'blog':return 'Write 1 blog post as TYPE: blog in markdown, about '+w+' words, with an H1 title, H2 section headers, short paragraphs, and a closing CTA section. SEO-aware: natural keyword phrasing in title and headers.';
+    case 'article':return 'Write 1 narrative article as TYPE: article in markdown, about '+w+' words. Flowing long-form storytelling (X article / newsletter style), minimal headers, strong opening, concrete details, closing CTA.';
+    case 'email':return 'Write 1 email as TYPE: email. Start the body with "SUBJECT OPTIONS:" and 3 subject lines, then the email itself: short paragraphs, mobile-friendly line lengths, one clear CTA.';
+    default:return 'Fulfill the request. Choose the best format(s) yourself. Output each deliverable as its own ASSET block with the correct TYPE.';
+  }
+}
+function buildContentPrompt(){
+  const bk=$('csCBrand').value,b=getBrandProfile(bk);
+  const goal=$('csGoal').value.trim(),src=$('csSource').value.trim(),link=$('csLink').value.trim(),ctx=$('csCtx').value.trim();
+  const t=csEffType();
+  let task;
+  if(t==='pack'){
+    const days=$('csDays').value;
+    const plats=[['csPfX','X'],['csPfLi','LinkedIn'],['csPfBlog','Blog']].filter(([id])=>$(id).checked).map(([,n])=>n);
+    task='Create a '+days+'-day content pack for: '+(plats.join(', ')||'X')+'. One asset per platform per day (X uses TYPE: xpost, LinkedIn uses TYPE: linkedin, Blog uses TYPE: blog at ~500 words). Each day gets a distinct angle drawn from the goal and source. Set DAY on every asset.';
+  }else task=csFmt(t);
+  return `You are the content engine of this marketing dashboard. You write finished, publish-ready marketing content in the brand's true voice. Output only the assets in the required format, no commentary.
+
+BRAND: ${b.name}
+VOICE & STYLE: ${b.voice}
+NEVER USE (words / tones): ${b.avoid}
+CONTENT PILLARS: ${b.pillars}
+${ctx?ctx:''}
+
+GLOBAL RULES: ${CS_GLOBAL_RULES}
+
+TASK: ${task}
+${goal?'GOAL: '+goal:''}
+${link?'SOURCE LINK (reference only, content not fetched): '+link:''}
+${src?'SOURCE MATERIAL:\n"""\n'+src+'\n"""':''}
+
+OUTPUT FORMAT (strict). For EVERY asset output exactly this block:
+===ASSET===
+TYPE: one of xpost | thread | linkedin | blog | article | email | other
+DAY: number (only for multi-day packs, otherwise omit this line)
+TITLE: short internal label
+BODY:
+(the finished content)
+
+Nothing before the first block, nothing between or after blocks.`;
+}
+function parseAssets(text){
+  const out=[];
+  const blocks=text.split(/^===ASSET===\s*$/m).map(x=>x.trim()).filter(Boolean);
+  for(const bl of blocks){
+    const tm=bl.match(/^TYPE:\s*([\w-]+)/im);
+    const type=tm&&CS_TYPES[tm[1].toLowerCase()]?tm[1].toLowerCase():'other';
+    const day=(bl.match(/^DAY:\s*(\d+)/im)||[])[1]||'';
+    const title=((bl.match(/^TITLE:\s*(.+)$/im)||[])[1]||'').trim();
+    const bi=bl.search(/^BODY:/im);
+    let body=bi>=0?bl.slice(bi).replace(/^BODY:[ \t]*\r?\n?/i,''):bl.replace(/^(TYPE|DAY|TITLE):.*$/gim,'');
+    body=body.trim();
+    if(body)out.push({type,day,title,body});
+  }
+  if(!out.length&&text.trim())out.push({type:'other',day:'',title:'',body:text.trim()});
+  return out;
+}
+async function csGenerate(){
+  if(!aiCfg().key){toast('Add a '+aiCfg().label+' API key in Settings first — Content Studio needs it');return}
+  const goal=$('csGoal').value.trim(),src=$('csSource').value.trim();
+  if(!goal&&!src){toast('Give it a goal or some source material to work from');return}
+  if(csSkill==='repurpose'&&!src){toast('Paste the post/source text — links can\'t be fetched from the browser');return}
+  const t=csEffType(),isPack=t==='pack';
+  const bk=$('csCBrand').value,b=getBrandProfile(bk);
+  $('csGenBtn').disabled=true;
+  $('csStatus').textContent=isPack?'✨ Writing the pack… 30-60s is normal':'✨ Writing…';
+  $('csResults').innerHTML='';
+  try{
+    const text=await callAI(buildContentPrompt(),isPack?8000:(t==='blog'||t==='article'?5000:2500));
+    csLastAssets=parseAssets(text);
+    const packId=csLastAssets.length>1?uid():'';
+    csLastAssets.forEach(a=>{
+      db.content.unshift({id:uid(),ts:new Date().toISOString(),brand:bk,type:a.type,day:a.day,packId,skill:csSkill,
+        title:a.title||a.body.split('\n')[0].replace(/^#+\s*/,'').slice(0,60),body:a.body,status:'Draft',link:$('csLink').value.trim()});
+    });
+    save();updateBadges();renderLibrary();
+    log('content_generated',b.short,csLastAssets.length+' asset(s) · '+CS_SKILLS[csSkill].label+(goal?' · '+goal.slice(0,60):''));
+    $('csStatus').textContent='✅ '+csLastAssets.length+' asset(s) saved to the library as Draft';
+    $('csResults').innerHTML=csLastAssets.map((a,i)=>{
+      const tm=CS_TYPES[a.type]||CS_TYPES.other;
+      return `<div class="asset-card"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="chip info">${tm[0]} ${tm[1]}</span>${a.day?`<span class="day-chip">Day ${a.day}</span>`:''}
+        <b style="font-size:13px">${esc(a.title||'')}</b><span style="flex:1"></span>
+        <button class="btn sm" onclick="csCopyAsset(${i})">📋 Copy</button></div>
+        <pre>${esc(a.body)}</pre></div>`;
+    }).join('');
+    if($('csAsk'))$('csAsk').value='';
+    toast(csLastAssets.length+' draft(s) saved to Content library');
+  }catch(err){
+    $('csStatus').textContent='❌ '+err.message;
+    toast('Generation failed: '+err.message);
+  }finally{$('csGenBtn').disabled=false}
+}
+function csCopyAsset(i){const a=csLastAssets[i];if(!a)return;navigator.clipboard.writeText(a.body).then(()=>toast('Copied'))}
+
+/* ---------- journal ---------- */
+function saveJournal(){
+  const txt=$('jrText').value.trim();
+  if(!txt){toast('Write something first');return}
+  const title=$('jrTitle').value.trim();
+  if(jrEditId){
+    const e=db.journal.find(x=>x.id===jrEditId);
+    if(e){e.title=title;e.text=txt}
+    jrEditId=null;$('jrSaveBtn').textContent='+ Save entry';$('jrCancelBtn').style.display='none';
+    log('journal','entry updated',title||txt.slice(0,60));
+  }else{
+    db.journal.unshift({id:uid(),date:iso(new Date()),ts:new Date().toISOString(),title,text:txt});
+    log('journal','entry added',title||txt.slice(0,60));
+  }
+  $('jrTitle').value='';$('jrText').value='';
+  save();renderJournal();toast('Journal saved');
+}
+function cancelJournalEdit(){jrEditId=null;$('jrTitle').value='';$('jrText').value='';$('jrSaveBtn').textContent='+ Save entry';$('jrCancelBtn').style.display='none'}
+function editJournal(id){
+  const e=db.journal.find(x=>x.id===id);if(!e)return;
+  jrEditId=id;$('jrTitle').value=e.title;$('jrText').value=e.text;
+  $('jrSaveBtn').textContent='Update entry';$('jrCancelBtn').style.display='';
+  $('jrTitle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function delJournal(id){if(!confirm('Delete this journal entry?'))return;db.journal=db.journal.filter(x=>x.id!==id);save();renderJournal();toast('Entry deleted')}
+function jrUse(id){
+  const e=db.journal.find(x=>x.id===id);if(!e)return;
+  openSkill('journal');
+  $('csSource').value=(e.title?e.title+'\n\n':'')+e.text;
+  $('csGoal').value='Turn this journal entry into content';
+}
+function renderJournal(){
+  $('jrCount').textContent=db.journal.length?db.journal.length+' entr'+(db.journal.length===1?'y':'ies'):'';
+  $('jrList').innerHTML=db.journal.slice(0,30).map(e=>`<div class="jr-entry">
+    <div class="jr-date">${e.date}${e.title?' · <span style="color:var(--text)">'+esc(e.title)+'</span>':''}</div>
+    <div class="jr-txt">${esc(e.text)}</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn sm primary" onclick="jrUse('${e.id}')">✨ Create content</button>
+      <button class="btn sm" onclick="editJournal('${e.id}')">✏ Edit</button>
+      <button class="btn sm danger" onclick="delJournal('${e.id}')">🗑</button>
+    </div></div>`).join('')||'<div class="empty">No entries yet. Your journal is the raw material — one honest note about today\'s work is enough to post from.</div>';
+}
+
+/* ---------- library ---------- */
+function libFiltered(){
+  const q=($('libSearch').value||'').toLowerCase(),bf=$('libBrand').value,tf=$('libType').value,sf=$('libStatus').value;
+  return db.content.filter(c=>(bf==='all'||c.brand===bf)&&(tf==='all'||c.type===tf)&&(sf==='all'||c.status===sf)
+    &&(!q||(c.title+' '+c.body).toLowerCase().includes(q)));
+}
+function renderLibrary(){
+  if(!$('libList'))return;
+  const list=libFiltered();
+  $('libList').innerHTML=list.slice(0,60).map(c=>{
+    const tm=CS_TYPES[c.type]||CS_TYPES.other;
+    return `<div class="lib-item" onclick="cvOpen('${c.id}')">
+      <div class="li-top">
+        <span class="chip info">${tm[0]} ${tm[1]}</span>
+        <span class="proj-tag"><span class="k-dot" style="background:${BRAND_COLORS[c.brand]||'#94a3b8'}"></span>${esc(brandShort(c.brand))}</span>
+        ${c.day?`<span class="day-chip">Day ${c.day}</span>`:''}
+        <b style="font-size:13px;flex:1">${esc(c.title||'(untitled)')}</b>
+        <select class="status-sel" onclick="event.stopPropagation()" onchange="libSetStatus('${c.id}',this.value)" style="${CS_STATUS_STYLE[c.status]};border:none">
+          ${['Draft','Ready','Posted'].map(s=>`<option ${s===c.status?'selected':''}>${s}</option>`).join('')}</select>
+        <span style="font-size:11px;color:var(--text3);white-space:nowrap">${c.ts.slice(5,10)}</span>
+      </div>
+      <div class="li-body">${esc(c.body.slice(0,220))}</div></div>`;
+  }).join('')||'<div class="empty">Nothing here yet. Hit a skill card above — every draft lands in this library.</div>';
+  $('libCount').textContent=list.length?('Showing '+Math.min(list.length,60)+' of '+list.length+' · '+db.content.length+' total'):'';
+}
+function libSetStatus(id,st){
+  const c=db.content.find(x=>x.id===id);if(!c)return;
+  c.status=st;save();renderLibrary();
+  log('content_status',c.title||c.type,st+' · '+brandShort(c.brand));
+  if(st==='Posted')toast('Marked as posted 🎉');
+}
+function cvOpen(id){
+  const c=db.content.find(x=>x.id===id);if(!c)return;
+  cvId=id;
+  $('cvTitle').value=c.title||'';$('cvBody').value=c.body;$('cvStatus').value=c.status;
+  const tm=CS_TYPES[c.type]||CS_TYPES.other;
+  $('cvMeta').innerHTML=tm[1]+' · '+esc(brandShort(c.brand))+(c.day?' · Day '+c.day:'')+' · '+new Date(c.ts).toLocaleString()+(c.link?' · <a href="'+esc(c.link)+'" target="_blank">source ↗</a>':'');
+  openModal('mCView');
+}
+function cvSave(){
+  const c=db.content.find(x=>x.id===cvId);if(!c)return;
+  c.title=$('cvTitle').value.trim();c.body=$('cvBody').value;c.status=$('cvStatus').value;
+  save();renderLibrary();closeModal('mCView');toast('Saved');
+}
+function cvCopy(){navigator.clipboard.writeText($('cvBody').value).then(()=>{const c=db.content.find(x=>x.id===cvId);toast('Copied');if(c)log('content_copied',c.title||c.type,brandShort(c.brand))})}
+function cvDelete(){
+  if(!confirm('Delete this content item?'))return;
+  db.content=db.content.filter(x=>x.id!==cvId);
+  save();updateBadges();renderLibrary();closeModal('mCView');toast('Deleted');
+}
+function exportContentMd(){
+  const list=libFiltered();
+  if(!list.length){toast('Nothing to export with the current filters');return}
+  const md='# Content library export · '+iso(new Date())+'\n\n'+list.map(c=>{
+    const tm=CS_TYPES[c.type]||CS_TYPES.other;
+    return '## '+(c.title||'(untitled)')+'\n\n- Brand: '+brandShort(c.brand)+'\n- Type: '+tm[1]+(c.day?'\n- Day: '+c.day:'')+'\n- Status: '+c.status+'\n- Created: '+c.ts.slice(0,10)+(c.link?'\n- Source: '+c.link:'')+'\n\n'+c.body+'\n\n---\n';
+  }).join('\n');
+  download('content-library-'+iso(new Date())+'.md',md,'text/markdown');
+  log('content_export','library',list.length+' items → markdown');toast('Markdown downloaded');
+}
+
+/* ---------- settings: brand profiles ---------- */
+function csFillSettingsBrand(){
+  const sel=$('setBrand');if(!sel)return;
+  if(!sel.options.length)sel.innerHTML=BRAND_KEYS.map(k=>`<option value="${k}">${esc(brandShort(k))}</option>`).join('');
+  loadBrandProfile();
+}
+function loadBrandProfile(){
+  const b=getBrandProfile($('setBrand').value);
+  $('sbVoice').value=b.voice;$('sbAudience').value=b.audience;$('sbOffer').value=b.offer;
+  $('sbCta').value=b.cta;$('sbAvoid').value=b.avoid;$('sbPillars').value=b.pillars;
+}
+function saveBrandProfile(){
+  const k=$('setBrand').value;
+  db.settings.brandProfiles[k]={voice:$('sbVoice').value.trim(),audience:$('sbAudience').value.trim(),offer:$('sbOffer').value.trim(),
+    cta:$('sbCta').value.trim(),avoid:$('sbAvoid').value.trim(),pillars:$('sbPillars').value.trim()};
+  save();log('settings_updated','brand voice: '+brandShort(k),'profile edited');toast('Brand profile saved');
+}
+function resetBrandProfile(){
+  const k=$('setBrand').value;
+  if(!confirm('Reset '+brandShort(k)+' to the sample default? Your edits to this profile will be lost.'))return;
+  delete db.settings.brandProfiles[k];
+  save();loadBrandProfile();log('settings_updated','brand voice: '+brandShort(k),'reset to baked-in default');toast('Reset to baked-in default');
+}
+
+/* ---------- v3 init + hooks ---------- */
+migrate3();
+const _showTab3=showTab;showTab=function(t){_showTab3(t);if(t==='content')renderContentTab()};
+const _updateBadges3=updateBadges;updateBadges=function(){_updateBadges3();const el=$('cntContent');if(el)el.textContent=(db.content||[]).length};
+const _renderSettings3=renderSettings;renderSettings=function(){_renderSettings3();csFillSettingsBrand()};
+updateBadges();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
